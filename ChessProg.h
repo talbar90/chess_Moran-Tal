@@ -15,21 +15,21 @@
 #include "chess_ui.h"
 #endif
 
-#define WHITE_P 'm'
+#define WHITE_P 'p'
 #define WHITE_B 'b'
 #define WHITE_N 'n'
 #define WHITE_R 'r'
 #define WHITE_Q 'q'
 #define WHITE_K 'k'
 
-#define BLACK_P 'M'
+#define BLACK_P 'P'
 #define BLACK_B 'B'
 #define BLACK_N 'N'
 #define BLACK_R 'R'
 #define BLACK_Q 'Q'
 #define BLACK_K 'K'
 
-#define EMPTY ' '
+#define EMPTY '_'
 
 #define BOARD_SIZE 8
 #define BOARD_LIMIT 1000000
@@ -78,13 +78,12 @@
 		abort();} \
 				else (void)0
 
-void print_line();
 void print_board(char board[BOARD_SIZE][BOARD_SIZE]);
 void clear_board(char board[BOARD_SIZE][BOARD_SIZE]);
 void init_board(char board[BOARD_SIZE][BOARD_SIZE]);
-int get_line_by_node_name(char * name);
 int load_game(char * path, char board[BOARD_SIZE][BOARD_SIZE]);
-int save_game(char board[BOARD_SIZE][BOARD_SIZE], COLOR color, char * file_name);
+//TODO changed from save_game(char board[BOARD_SIZE][BOARD_SIZE], COLOR color, char * file_name)
+int save_game(char * file_name,char board[BOARD_SIZE][BOARD_SIZE] );
 char* input2str(FILE* pFile);
 void conosle_settings_mode(char* str, char board[BOARD_SIZE][BOARD_SIZE]);
 int pre_turn_verify(char board[BOARD_SIZE][BOARD_SIZE], COLOR color);
