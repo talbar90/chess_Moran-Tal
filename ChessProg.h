@@ -34,17 +34,18 @@
 #define BOARD_SIZE 8
 #define BOARD_LIMIT 1000000
 
-#define ENTER_SETTINGS "Enter game settings:\n" 
+#define ENTER_SETTINGS "Specify game setting or type 'start' to begin a game with the current setting:\n"
 #define WRONG_GAME_MODE "Wrong game mode\n"
 #define TWO_PLAYERS_GAME_MODE "Running game in 2 players mode\n"
 #define PLAYER_VS_AI_GAME_MODE "Running game in player vs. AI mode\n"
-#define WRONG_MINIMAX_DEPTH "Wrong value for minimax depth. The value should be between 1 to 4\n"
-#define WRONG_FILE_NAME "Wrong file name\n"
+#define WRONG_MINIMAX_DEPTH "Wrong difficulty level. The value should be between 1 to 5\n"
+#define WRONG_FILE_NAME "Error: File doesn't exist or cannot be opened\n"
 #define WRONG_POSITION "Invalid position on the board\n"
 #define WRONG_PIECE "Setting this piece creates an invalid board\n"  
 #define NO_PIECE "The specified position does not contain your piece\n"
 #define WROND_BOARD_INITIALIZATION "Wrong board initialization\n"
 
+//TODO verify illegal command syntax
 #define ILLEGAL_COMMAND "Illegal command, please try again\n"
 #define ILLEGAL_MOVE "Illegal move\n"
 
@@ -59,6 +60,7 @@
 #define BLACK_WIN "MATE! Black player wins!\n" 
 #define TIE "The game ends in a tie\n"
 #define CHECK "Check!\n"
+#define QUIT_MSG "Exiting...\n"
 
 #define QUIT 0
 #define GAME_ON 1
@@ -84,7 +86,7 @@ void init_board(char board[BOARD_SIZE][BOARD_SIZE]);
 int load_game(char * path, char board[BOARD_SIZE][BOARD_SIZE]);
 //TODO changed from save_game(char board[BOARD_SIZE][BOARD_SIZE], COLOR color, char * file_name)
 int save_game(char * file_name,char board[BOARD_SIZE][BOARD_SIZE] );
-char* input2str(FILE* pFile);
+char* input_to_str(FILE* pFile);
 void conosle_settings_mode(char* str, char board[BOARD_SIZE][BOARD_SIZE]);
 int pre_turn_verify(char board[BOARD_SIZE][BOARD_SIZE], COLOR color);
 void computer_turn(char board[BOARD_SIZE][BOARD_SIZE], COLOR color);

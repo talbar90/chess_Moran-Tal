@@ -11,7 +11,7 @@
 
 #define perror_message(func_name) (fprintf(stderr, "Error: standard function %s has failed\n", func_name))
 
-typedef enum { WHITE = 0, BLACK = 1, BAD = -100} COLOR;
+typedef enum { BLACK = 0, WHITE = 1, BAD = -100} COLOR;
 
 typedef struct pos{
 	int col;

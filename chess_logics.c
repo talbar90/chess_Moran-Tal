@@ -8,8 +8,8 @@ COLOR curr_player;
 Move* best_move;
 COLOR user_color = WHITE; 
 COLOR start_color = WHITE;
-int minimax_depth = 1;
-int game_mode = 1; // player vs player mode (2 -> player vs AI)
+int minimax_depth = 2;
+int game_mode = 1; // player vs AI, 2 player vs player
 int best_depth = 0;
 int board_count = 0;
 int gui_mode = 0;

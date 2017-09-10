@@ -69,6 +69,7 @@ void init_board(char board[BOARD_SIZE][BOARD_SIZE]) {
 int load_game(char * path, char board[BOARD_SIZE][BOARD_SIZE]) {
 	FILE *fxml;
 	fxml = fopen(path, "r");
+	//TODO make sure the path is correct and can run on nova
 	if (fxml == NULL ) return 0;
 	char buffer[255];
 	fgets(buffer, 255, (FILE*) fxml); // reads first header line
@@ -245,7 +246,7 @@ int save_game(char * path, char board[BOARD_SIZE][BOARD_SIZE]) {
 //}
 
 // handles user input (unknown length), returns a string without redundant white spaces after each new line
-char* input2str(FILE* pFile) {
+char* input_to_str(FILE* pFile) {
 	char *str;
 	char ch, pch;
 	size_t size = 10;
@@ -272,6 +273,13 @@ char* input2str(FILE* pFile) {
 	return str;
 }
 
+void print_settings_sole_player(){
+	printf("SETTINGS:\nGAME_MODE: %d\nDIFFICULTY_LVL: %d\nUSER_CLR: %s\n",game_mode, minimax_depth , user_color == WHITE ? "WHITE": "BLACK");
+}
+
+void print_settings_two_players(){
+	printf("SETTINGS:\nGAME_MODE: %d\n",game_mode);
+}
 // conosle settings state input loop - gets the user's command and handles it
 void conosle_settings_mode(char* str, char board[BOARD_SIZE][BOARD_SIZE]) {
 	char * word1;
@@ -282,18 +290,18 @@ void conosle_settings_mode(char* str, char board[BOARD_SIZE][BOARD_SIZE]) {
 			printf(WRONG_GAME_MODE);
 		else {
 			game_mode = x;
-			printf("Running game in %s mode\n", game_mode == 1 ? "2 players" : "player vs. AI");
+			printf("Game mode is set to %s\n", game_mode == 1 ? "1 player" : "2 players");
 		}
 	} else if (strcmp(word1, "difficulty") == 0) {
-		char * word2 = strtok(NULL, " ");
-		if (game_mode == 1)
+		int x = atoi(strtok(NULL, " "));
+		if (game_mode == 2)
 			printf(ILLEGAL_COMMAND);
 		else {
-			if (strcmp(word2, "best") == 0) {
+			//todo check expert level
+			if (x == 5) {
 				minimax_depth = 4; // temp value, for every call of the minimax the minimax_depth is benn change
 				best_depth = 1;
 			} else {
-				int x = atoi(word2);
 				if (x > 4 || x < 1)
 					printf(WRONG_MINIMAX_DEPTH);
 				else
@@ -302,67 +310,74 @@ void conosle_settings_mode(char* str, char board[BOARD_SIZE][BOARD_SIZE]) {
 		}
 	} else if (strcmp(word1, "user_color") == 0) {
 		char * color = strtok(NULL, " ");
-		if (game_mode == 1)
+		if (game_mode == 2)
 			printf(ILLEGAL_COMMAND);
 		else if (strcmp(color, "black") == 0) user_color = BLACK;
 	} else if (strcmp(word1, "load") == 0) {
 		char * path = strtok(NULL, " ");
-		//TODO
-		//if (load_game(path, board)) print_board(board);
-		//else printf(WRONG_FILE_NAME);
-	} else if (strcmp(word1, "clear") == 0)
-		clear_board(board);
-	else if (strcmp(word1, "next_player") == 0) {
-		char * color = strtok(NULL, " ");
-		if (strcmp(color, "black") == 0) start_color = BLACK;
-	} else if ((strcmp(word1, "rm") == 0) || (strcmp(word1, "set") == 0)) {
-		char * coor1 = strtok(NULL, " <,>");
-		char * coor2 = strtok(NULL, " <,>");
-		if (coor1[0] < 'a' || coor1[0] > 'h' || atoi(coor2) < 1 || atoi(coor2) > 8) {
-			printf(WRONG_POSITION);
-		}
-		if (strcmp(word1, "rm") == 0)
-			board[coor1[0] - 'a'][atoi(coor2) - 1] = EMPTY;
-		else {
-			char * set_color = strtok(NULL, " ");
-			if (set_color == NULL ) return;
-			char * set_name = strtok(NULL, " ");
-			char piece2set = (strcmp(set_color, "white") == 0) ? get_piece_by_name(set_name, WHITE) : get_piece_by_name(set_name, BLACK);
-			if (board[coor1[0] - 'a'][atoi(coor2) - 1] == piece2set) return;
-
-			//check if the added piece exceeds the amount of allowed pieces on the board
-			int * whites = malloc(sizeof(int) * 6);
-			int * blacks = malloc(sizeof(int) * 6);
-			for (int i = 0; i < 6; i++) {
-				whites[i] = 0;
-				blacks[i] = 0;
-			}
-			piece_counter(board, whites, blacks);
-			if (get_color_by_piece(piece2set) == WHITE) {
-				if ((get_type_by_piece(piece2set) == 0) && whites[0] == 1)
-					printf(WRONG_PIECE);
-				else if ((get_type_by_piece(piece2set) == 1) && whites[1] == 1)
-					printf(WRONG_PIECE);
-				else if (piece2set != EMPTY && whites[get_type_by_piece(piece2set)] == 2)
-					printf(WRONG_PIECE);
-				else
-					board[coor1[0] - 'a'][atoi(coor2) - 1] = piece2set;
-			}
-			if (get_color_by_piece(piece2set) == BLACK) {
-				if ((get_type_by_piece(piece2set) == 0) && blacks[0] == 1)
-					printf(WRONG_PIECE);
-				else if ((get_type_by_piece(piece2set) == 1) && blacks[1] == 1)
-					printf(WRONG_PIECE);
-				else if (piece2set != EMPTY && blacks[get_type_by_piece(piece2set)] == 2)
-					printf(WRONG_PIECE);
-				else
-					board[coor1[0] - 'a'][atoi(coor2) - 1] = piece2set;
-			}
-			free(whites);
-			free(blacks);
-		}
-	} else if (strcmp(word1, "print") == 0)
-		print_board(board);
+		if (load_game(path, board))	print_board(board);
+		else printf(WRONG_FILE_NAME);
+	} else if (strcmp(word1, "default") == 0){
+		game_mode = 1;
+		minimax_depth = 2;
+		user_color = WHITE;
+	} else if (strcmp(word1,"print_setting") == 0){
+		game_mode == 1 ? print_settings_sole_player() : print_settings_two_players();
+	}
+//	else if (strcmp(word1, "clear") == 0)
+//		clear_board(board);
+//	else if (strcmp(word1, "next_player") == 0) {
+//		char * color = strtok(NULL, " ");
+//		if (strcmp(color, "black") == 0) start_color = BLACK;
+//	} else if ((strcmp(word1, "rm") == 0) || (strcmp(word1, "set") == 0)) {
+//		char * coor1 = strtok(NULL, " <,>");
+//		char * coor2 = strtok(NULL, " <,>");
+//		if (coor1[0] < 'a' || coor1[0] > 'h' || atoi(coor2) < 1 || atoi(coor2) > 8) {
+//			printf(WRONG_POSITION);
+//		}
+//		if (strcmp(word1, "rm") == 0)
+//			board[coor1[0] - 'a'][atoi(coor2) - 1] = EMPTY;
+//		else {
+//			char * set_color = strtok(NULL, " ");
+//			if (set_color == NULL ) return;
+//			char * set_name = strtok(NULL, " ");
+//			char piece2set = (strcmp(set_color, "white") == 0) ? get_piece_by_name(set_name, WHITE) : get_piece_by_name(set_name, BLACK);
+//			if (board[coor1[0] - 'a'][atoi(coor2) - 1] == piece2set) return;
+//
+//			//check if the added piece exceeds the amount of allowed pieces on the board
+//			int * whites = malloc(sizeof(int) * 6);
+//			int * blacks = malloc(sizeof(int) * 6);
+//			for (int i = 0; i < 6; i++) {
+//				whites[i] = 0;
+//				blacks[i] = 0;
+//			}
+//			piece_counter(board, whites, blacks);
+//			if (get_color_by_piece(piece2set) == WHITE) {
+//				if ((get_type_by_piece(piece2set) == 0) && whites[0] == 1)
+//					printf(WRONG_PIECE);
+//				else if ((get_type_by_piece(piece2set) == 1) && whites[1] == 1)
+//					printf(WRONG_PIECE);
+//				else if (piece2set != EMPTY && whites[get_type_by_piece(piece2set)] == 2)
+//					printf(WRONG_PIECE);
+//				else
+//					board[coor1[0] - 'a'][atoi(coor2) - 1] = piece2set;
+//			}
+//			if (get_color_by_piece(piece2set) == BLACK) {
+//				if ((get_type_by_piece(piece2set) == 0) && blacks[0] == 1)
+//					printf(WRONG_PIECE);
+//				else if ((get_type_by_piece(piece2set) == 1) && blacks[1] == 1)
+//					printf(WRONG_PIECE);
+//				else if (piece2set != EMPTY && blacks[get_type_by_piece(piece2set)] == 2)
+//					printf(WRONG_PIECE);
+//				else
+//					board[coor1[0] - 'a'][atoi(coor2) - 1] = piece2set;
+//			}
+//			free(whites);
+//			free(blacks);
+//		}
+//	}
+//	else if (strcmp(word1, "print") == 0)
+//		print_board(board);
 	else printf(ILLEGAL_COMMAND);
 	return;
 }
@@ -422,7 +437,7 @@ void user_turn(char board[BOARD_SIZE][BOARD_SIZE], COLOR color) {
 			printf(ENTER_YOUR_MOVE, color == WHITE ? "white" : "black");
 			if (command != NULL )
 			free(command);
-			command = input2str(stdin);
+			command = input_to_str(stdin);
 			word1 = strtok(command, " ");
 
 			if (strcmp(word1, "quit") == 0) {
@@ -575,7 +590,7 @@ int main(int argc, char * argv[]) {
 	else { //setting console
 		init_board(board);
 		printf(ENTER_SETTINGS);
-		char *command = input2str(stdin);
+		char *command = input_to_str(stdin);
 		while (strcmp(command, "quit") != 0) {
 			if (strcmp(command, "start") == 0) {
 				if (is_valid_board(board)) {
@@ -586,8 +601,9 @@ int main(int argc, char * argv[]) {
 				conosle_settings_mode(command, board);
 			free(command);
 			printf(ENTER_SETTINGS);
-			command = input2str(stdin);
+			command = input_to_str(stdin);
 		}
+		printf(QUIT_MSG);
 		free(command);
 	}
 
@@ -747,7 +763,7 @@ int main(int argc, char * argv[]) {
 			}
 		}
 		if (!gui_mode) {
-			char *command = input2str(stdin);
+			char *command = input_to_str(stdin);
 			free(command);
 		}
 	}
