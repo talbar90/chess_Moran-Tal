@@ -5,13 +5,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-//#include <libxml\parser.h>
-//#include <libxml\tree.h>
-//#include <libxml\xmlwriter.h>
 
 #define perror_message(func_name) (fprintf(stderr, "Error: standard function %s has failed\n", func_name))
 
 typedef enum { BLACK = 0, WHITE = 1, BAD = -100} COLOR;
+
+typedef enum { PLAYER_VS_COMPUTER = 1, TWO_PLAYERS = 2} GAME_MODE;
 
 typedef struct pos{
 	int col;
@@ -24,6 +23,7 @@ typedef struct move{
 	char promote; // value 0 means no promotion
 	int score;
 	struct move* next;
+	struct move* prev;
 } Move;
 
 

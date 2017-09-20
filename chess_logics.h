@@ -27,13 +27,16 @@
 // Globals
 extern Move* moves;
 extern Move* moves_head;
+extern Move* curr_move;
+extern int undo_count;
+extern int history_size;
 extern char curr_piece;
 extern COLOR curr_player;
 extern Move* best_move;
 extern COLOR user_color;
 extern COLOR start_color;
 extern int minimax_depth;
-extern int game_mode;
+extern GAME_MODE game_mode;
 extern int best_depth;
 extern int board_count;
 extern int gui_mode;
@@ -78,6 +81,7 @@ int calc_score(char board[BOARD_SIZE][BOARD_SIZE], COLOR player);
 int alpha_beta_minimax(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, int depth, int alpha, int beta);
 int is_valid_board(char board[BOARD_SIZE][BOARD_SIZE]);
 Move * is_valid_move(Move * moves, Move * new_move);
-
+int get_opposite_color();
+void undo_move(char board[BOARD_SIZE][BOARD_SIZE], COLOR color);
 
 #endif

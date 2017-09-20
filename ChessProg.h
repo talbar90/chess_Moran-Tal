@@ -39,11 +39,14 @@
 #define TWO_PLAYERS_GAME_MODE "Running game in 2 players mode\n"
 #define PLAYER_VS_AI_GAME_MODE "Running game in player vs. AI mode\n"
 #define WRONG_MINIMAX_DEPTH "Wrong difficulty level. The value should be between 1 to 5\n"
-#define WRONG_FILE_NAME "Error: File doesn't exist or cannot be opened\n"
+#define WRONG_FILE_NAME "File cannot be created or modified\n"
 #define WRONG_POSITION "Invalid position on the board\n"
 #define WRONG_PIECE "Setting this piece creates an invalid board\n"  
-#define NO_PIECE "The specified position does not contain your piece\n"
+#define NO_PIECE "The specified position does not contain %s player piece\n"
+#define WRONG_UNDO_GAME_MODE "Undo command not available in 2 players mode\n"
+#define EMPTY_HISTORY "Empty history, move cannot be undone\n"
 #define WROND_BOARD_INITIALIZATION "Wrong board initialization\n"
+#define UNDO_MOVE "Undo move for player %s : <%d,%c> -> <%d,%c>\n"
 
 //TODO verify illegal command syntax
 #define ILLEGAL_COMMAND "Illegal command, please try again\n"
@@ -56,10 +59,10 @@
 #define print_message(message) (printf("%s", message));
 
 #define ENTER_YOUR_MOVE "%s player - Enter your move:\n" 
-#define WHITE_WIN "MATE! White player wins!\n" 
-#define BLACK_WIN "MATE! Black player wins!\n" 
-#define TIE "The game ends in a tie\n"
-#define CHECK "Check!\n"
+#define WHITE_WIN "Checkmate! White player wins the game\n"
+#define BLACK_WIN "Checkmate! Black player wins the game\n"
+#define TIE "The game is tied\n"
+#define CHECK "Check! %s King is threatened\n"
 #define QUIT_MSG "Exiting...\n"
 
 #define QUIT 0
@@ -94,6 +97,7 @@ void get_best_moves(char board[BOARD_SIZE][BOARD_SIZE], int depth);
 void user_turn(char board[BOARD_SIZE][BOARD_SIZE], COLOR color);
 void console_alert(int alert);
 void gui_alert(int alert);
+Move* copy_move(Move* move_to_copy);
 int main(int argc, char * argv[]);
 
 #endif
