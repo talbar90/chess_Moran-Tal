@@ -205,46 +205,46 @@ void set_piece_picked(int i){
 }
 
 // highlight the best move suggested for the player
-void show_best_move(int depth){
-	if (depth == 0) depth = minimax_depth;
-	get_best_moves(gui_board, depth);
-	
-	TreeNode *n1 = get_button_node(gameWindow->children[0], best_move->piece.col * 10 + best_move->piece.row)->children[0];
-	TreeNode *n2 = get_button_node(gameWindow->children[0], best_move->dest.col * 10 + best_move->dest.row);
-	if (n2->child_num != 0) n2 = n2->children[0];
-	
-	n1->child_num = 1;
-	n1->children = malloc(sizeof(TreeNode*));
-	n1->children[0] = NULL;
-	n2->child_num = 1;
-	n2->children = malloc(sizeof(TreeNode*));
-	n2->children[0] = NULL;
-
-	TreeNode *l1 = new_label(n1, "highlight", ((Label*)n1->control)->x, ((Label*)n1->control)->y, TILE, TILE, 0, "pics/highlight_tile.bmp");
-	TreeNode *l2 = new_label(n2, "highlight", ((Label*)n2->control)->x, ((Label*)n2->control)->y, TILE, TILE, 0, "pics/highlight_tile.bmp");
-
-	draw_tree(gameWindow);
-	SDL_Delay(1000);
-	n1->child_num--;
-	n2->child_num--;
-	draw_tree(gameWindow);
-	SDL_Delay(1000);
-	n1->child_num++;
-	n2->child_num++;
-	draw_tree(gameWindow);
-	SDL_Delay(1000);
-
-	n1->child_num--;
-	n2->child_num--;
-	free_tree(l1);
-	free_tree(l2);
-	free(n1->children);
-	free(n2->children);
-	n1->children = NULL;
-	n2->children = NULL;
-	
-	draw_tree(gameWindow);
-}
+//void show_best_move(int depth){
+//	if (depth == 0) depth = minimax_depth;
+//	get_best_moves(gui_board, depth);
+//
+//	TreeNode *n1 = get_button_node(gameWindow->children[0], best_move->piece.col * 10 + best_move->piece.row)->children[0];
+//	TreeNode *n2 = get_button_node(gameWindow->children[0], best_move->dest.col * 10 + best_move->dest.row);
+//	if (n2->child_num != 0) n2 = n2->children[0];
+//
+//	n1->child_num = 1;
+//	n1->children = malloc(sizeof(TreeNode*));
+//	n1->children[0] = NULL;
+//	n2->child_num = 1;
+//	n2->children = malloc(sizeof(TreeNode*));
+//	n2->children[0] = NULL;
+//
+//	TreeNode *l1 = new_label(n1, "highlight", ((Label*)n1->control)->x, ((Label*)n1->control)->y, TILE, TILE, 0, "pics/highlight_tile.bmp");
+//	TreeNode *l2 = new_label(n2, "highlight", ((Label*)n2->control)->x, ((Label*)n2->control)->y, TILE, TILE, 0, "pics/highlight_tile.bmp");
+//
+//	draw_tree(gameWindow);
+//	SDL_Delay(1000);
+//	n1->child_num--;
+//	n2->child_num--;
+//	draw_tree(gameWindow);
+//	SDL_Delay(1000);
+//	n1->child_num++;
+//	n2->child_num++;
+//	draw_tree(gameWindow);
+//	SDL_Delay(1000);
+//
+//	n1->child_num--;
+//	n2->child_num--;
+//	free_tree(l1);
+//	free_tree(l2);
+//	free(n1->children);
+//	free(n2->children);
+//	n1->children = NULL;
+//	n2->children = NULL;
+//
+//	draw_tree(gameWindow);
+//}
 
 Move* generate_move(int col, int row){
 	Move *res = malloc(sizeof(Move));
@@ -449,18 +449,18 @@ void init_game_window(){
 		Panel *p_best = (Panel*)best_panel->control;
 
 		new_label(best_panel, "best_logo", p_best->width / 2 - BUTTON_W / 2, 10, BUTTON_W, BUTTON_H, 0, "pics/best_logo.bmp");
-		new_button(best_panel, "depth1", p_best->width / 2 - BUTTON_W / 2, 20 + BUTTON_H, BUTTON_W, BUTTON_H, 0, "pics/depth1.bmp", show_best_move, 1);
-		new_button(best_panel, "depth2", p_best->width / 2 - BUTTON_W / 2, 30 + 2 * BUTTON_H, BUTTON_W, BUTTON_H, 0, "pics/depth2.bmp", show_best_move, 2);
-		new_button(best_panel, "depth3", p_best->width / 2 - BUTTON_W / 2, 40 + 3 * BUTTON_H, BUTTON_W, BUTTON_H, 0, "pics/depth3.bmp", show_best_move, 3);
-		new_button(best_panel, "depth4", p_best->width / 2 - BUTTON_W / 2, 50 + 4 * BUTTON_H, BUTTON_W, BUTTON_H, 0, "pics/depth4.bmp", show_best_move, 4);
-		new_button(best_panel, "best_depth", p_best->width / 2 - BUTTON_W / 2, 60 + 5 * BUTTON_H, BUTTON_W, BUTTON_H, 0, "pics/best_depth.bmp", show_best_move, -1);
+//		new_button(best_panel, "depth1", p_best->width / 2 - BUTTON_W / 2, 20 + BUTTON_H, BUTTON_W, BUTTON_H, 0, "pics/depth1.bmp", show_best_move, 1);
+//		new_button(best_panel, "depth2", p_best->width / 2 - BUTTON_W / 2, 30 + 2 * BUTTON_H, BUTTON_W, BUTTON_H, 0, "pics/depth2.bmp", show_best_move, 2);
+//		new_button(best_panel, "depth3", p_best->width / 2 - BUTTON_W / 2, 40 + 3 * BUTTON_H, BUTTON_W, BUTTON_H, 0, "pics/depth3.bmp", show_best_move, 3);
+//		new_button(best_panel, "depth4", p_best->width / 2 - BUTTON_W / 2, 50 + 4 * BUTTON_H, BUTTON_W, BUTTON_H, 0, "pics/depth4.bmp", show_best_move, 4);
+//		new_button(best_panel, "best_depth", p_best->width / 2 - BUTTON_W / 2, 60 + 5 * BUTTON_H, BUTTON_W, BUTTON_H, 0, "pics/best_depth.bmp", show_best_move, -1);
 	}
 	else{ // PvsAI mode
 		TreeNode *best_panel = new_panel(menu_panel, "best_panel", 600, 40 + 2 * BUTTON_H, 200, (WIN_H - 100 + 2 * BUTTON_H), 2, NULL);
 		Panel *p_best = (Panel*)best_panel->control;
 
 		new_label(best_panel, "best_logo", p_best->width / 2 - BUTTON_W / 2, 10, BUTTON_W, BUTTON_H, 0, "pics/best_logo.bmp");
-		new_button(best_panel, "best_move", p_best->width / 2 - BUTTON_W / 2, 20 + BUTTON_H, BUTTON_W, BUTTON_H, 0, "pics/best_move.bmp", show_best_move, 0);
+//		new_button(best_panel, "best_move", p_best->width / 2 - BUTTON_W / 2, 20 + BUTTON_H, BUTTON_W, BUTTON_H, 0, "pics/best_move.bmp", show_best_move, 0);
 	}
 
 	for (int i = 0; i < BOARD_SIZE; i++) // every board tile is a transparent button 

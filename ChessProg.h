@@ -47,6 +47,9 @@
 #define EMPTY_HISTORY "Empty history, move cannot be undone\n"
 #define WROND_BOARD_INITIALIZATION "Wrong board initialization\n"
 #define UNDO_MOVE "Undo move for player %s : <%d,%c> -> <%d,%c>\n"
+#define SETTING_SOLE_PLAYER "SETTINGS:\nGAME_MODE: %d\nDIFFICULTY_LVL: %d\nUSER_CLR: %s\n"
+#define SETTING_TWO_PLAYERS "SETTINGS:\nGAME_MODE: %d\n"
+#define EXPERT_LEVEL_NOT_SUPPORTS "Expert level not supported"
 
 //TODO verify illegal command syntax
 #define ILLEGAL_COMMAND "Illegal command, please try again\n"
@@ -59,10 +62,10 @@
 #define print_message(message) (printf("%s", message));
 
 #define ENTER_YOUR_MOVE "%s player - Enter your move:\n" 
-#define WHITE_WIN "Checkmate! White player wins the game\n"
-#define BLACK_WIN "Checkmate! Black player wins the game\n"
-#define TIE "The game is tied\n"
-#define CHECK "Check! %s King is threatened\n"
+#define WHITE_WIN "Checkmate! white player wins the game\n"
+#define BLACK_WIN "Checkmate! black player wins the game\n"
+#define TIE "The game ends with a tie\n"
+#define CHECK "Check!"
 #define QUIT_MSG "Exiting...\n"
 
 #define QUIT 0
@@ -76,12 +79,12 @@
 #define fgetc(x) safe_fgetc(x)
 #define free(x) safe_free(x)
 
-#define printf(...) \
-	if (printf(__VA_ARGS__) < 0){ \
-		perror_message("printf"); \
-		if (fail_safe) for (int i = 0; i < mem_count; i++) free(mem_list[i]); \
-		abort();} \
-				else (void)0
+//#define printf(...) \
+//	if (printf(__VA_ARGS__) < 0){ \
+//		perror_message("printf"); \
+//		if (fail_safe) for (int i = 0; i < mem_count; i++) free(mem_list[i]); \
+//		abort();} \
+//				else (void)0
 
 void print_board(char board[BOARD_SIZE][BOARD_SIZE]);
 void clear_board(char board[BOARD_SIZE][BOARD_SIZE]);
@@ -93,7 +96,6 @@ char* input_to_str(FILE* pFile);
 void conosle_settings_mode(char* str, char board[BOARD_SIZE][BOARD_SIZE]);
 int pre_turn_verify(char board[BOARD_SIZE][BOARD_SIZE], COLOR color);
 void computer_turn(char board[BOARD_SIZE][BOARD_SIZE], COLOR color);
-void get_best_moves(char board[BOARD_SIZE][BOARD_SIZE], int depth);
 void user_turn(char board[BOARD_SIZE][BOARD_SIZE], COLOR color);
 void console_alert(int alert);
 void gui_alert(int alert);

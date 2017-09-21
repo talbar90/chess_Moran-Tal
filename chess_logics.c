@@ -124,6 +124,32 @@ int get_type_by_piece(char piece) {
 	return -1; // added to avoid compilation warning - not very safe, but we made sure we never get here.
 }
 
+char* get_piece_full_name_by_char(char piece){
+	switch (piece) {
+	case WHITE_K:
+	case BLACK_K:
+		return "king";
+	case WHITE_Q:
+	case BLACK_Q:
+		return "queen";
+	case WHITE_B:
+	case BLACK_B:
+		return "bishop";
+	case WHITE_R:
+	case BLACK_R:
+		return "rook";
+	case WHITE_N:
+	case BLACK_N:
+		return "knight";
+		break;
+	case WHITE_P:
+	case BLACK_P:
+		return "pawn";
+	}
+	return "none";
+}
+
+
 COLOR get_color_by_piece(char piece) {
 	if (piece == WHITE_K || piece == WHITE_Q || piece == WHITE_B || piece == WHITE_R || piece == WHITE_N || piece == WHITE_P)
 		return WHITE;
@@ -607,9 +633,9 @@ int calc_score(char board[BOARD_SIZE][BOARD_SIZE], COLOR player) {
 	piece_counter(board, whites, blacks);
 
 	int white_score = whites[get_type_by_piece(WHITE_P)] + 3 * whites[get_type_by_piece(WHITE_B)] + 3 * whites[get_type_by_piece(WHITE_N)]
-			+ 5 * whites[get_type_by_piece(WHITE_R)] + 9 * whites[get_type_by_piece(WHITE_Q)] + 400 * whites[get_type_by_piece(WHITE_K)];
+			+ 5 * whites[get_type_by_piece(WHITE_R)] + 9 * whites[get_type_by_piece(WHITE_Q)] + 100 * whites[get_type_by_piece(WHITE_K)];
 	int black_score = blacks[get_type_by_piece(BLACK_P)] + 3 * blacks[get_type_by_piece(BLACK_B)] + 3 * blacks[get_type_by_piece(BLACK_N)]
-			+ 5 * blacks[get_type_by_piece(BLACK_R)] + 9 * blacks[get_type_by_piece(BLACK_Q)] + 400 * blacks[get_type_by_piece(BLACK_K)];
+			+ 5 * blacks[get_type_by_piece(BLACK_R)] + 9 * blacks[get_type_by_piece(BLACK_Q)] + 100 * blacks[get_type_by_piece(BLACK_K)];
 	free(whites);
 	free(blacks);
 	if (player == WHITE)
@@ -749,7 +775,6 @@ Move * is_valid_move(Move * moves, Move * new_move) {
 	while (current_move != NULL ) {
 		if ((current_move->piece.col == new_move->piece.col) && (current_move->piece.row == new_move->piece.row)
 				&& (current_move->dest.col == new_move->dest.col) && (current_move->dest.row == new_move->dest.row)) return current_move;
-
 		current_move = current_move->next;
 	}
 	return NULL ;
