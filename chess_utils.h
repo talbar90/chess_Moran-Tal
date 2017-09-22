@@ -20,8 +20,8 @@ typedef struct pos{
 typedef struct move{
 	Pos piece;
 	Pos dest;
-	char promote; // value 0 means no promotion
 	int score;
+	int promote;
 	struct move* next;
 	struct move* prev;
 } Move;

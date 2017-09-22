@@ -1,8 +1,8 @@
 #include "ChessProg.h"
 
-//TODO: remove_is_valid_board and change scoring function - simplify
 //TODO: change pre_turn_verify
 //TODO: add support to reset in main
+//TODO: change all prawn to mM
 
 //prints board in the following form:
 //8| R _ _ n _ K _ _
@@ -96,7 +96,6 @@ int load_game(char * path, char board[BOARD_SIZE][BOARD_SIZE]) {
 	char * difficulty_tag = strstr(buffer, "<difficulty>") + strlen("<difficulty>");
 	if (difficulty_tag[0] != '<') {
 		minimax_depth = difficulty_tag[0] - '0';
-		if (minimax_depth == 5) best_depth = 1;
 	}
 	fgets(buffer, 255, (FILE*) fxml);
 	char * user_color_tag = strstr(buffer, "<user_color>") + strlen("<user_color>");
@@ -167,31 +166,6 @@ char* input_to_str(FILE* pFile) {
 	return user_input;
 }
 
-//	char *str;
-//	char ch, pch;
-//	size_t size = 10;
-//	size_t len = 0;
-//	str = malloc(sizeof(char)*size);
-//	ch = fgetc(pFile);
-//	pch = '~';
-//	while (ch != EOF && ch != '\n') {
-//		if ((pch != '~' && pch != ' ') || (ch != ' ')) {
-//			str[len++] = ch;
-//			if (len == size) {
-//				size = 2 * size;
-//				str = realloc(str, sizeof(char)*size);
-//			}
-//			pch = ch;
-//			ch = fgetc(pFile);
-//		} else {
-//			pch = ch;
-//			ch = fgetc(pFile);
-//		}
-//	}
-//	str[len++] = '\0';
-//	str = realloc(str, sizeof(char)*len);
-//	return str;
-
 void print_settings_sole_player() {
 	printf(SETTING_SOLE_PLAYER, game_mode, minimax_depth, user_color == WHITE ? "WHITE" : "BLACK");
 }
@@ -217,9 +191,11 @@ void conosle_settings_mode(char* str, char board[BOARD_SIZE][BOARD_SIZE]) {
 		}
 	} else if (strcmp(command, "user_color") == 0) {
 		char * color = strtok(NULL, " ");
+		printf("user_color");
 		if (game_mode == 2)
 			printf(ILLEGAL_COMMAND);
-		else if (strcmp(color, "black") == 0) user_color = BLACK;
+		else
+			user_color = (strcmp(color, "black") == 0) ? BLACK : WHITE;
 	} else if (strcmp(command, "difficulty") == 0) {
 		int x = atoi(strtok(NULL, " "));
 		if (game_mode == TWO_PLAYERS)
@@ -269,7 +245,7 @@ void computer_turn(char board[BOARD_SIZE][BOARD_SIZE], COLOR color) {
 	if (moves_head != NULL ) {
 		alpha_beta_minimax(board, color, 0, -500, 500);
 		Move * move2do = best_move;
-		exc_move(board, move2do, color);
+		exc_move(board, move2do);
 		if (!gui_mode) {
 			printf("Computer: move %s at ", get_piece_full_name_by_char(board[move2do->dest.col][move2do->dest.row]));
 			print_move(move2do);
@@ -317,7 +293,7 @@ void user_turn(char board[BOARD_SIZE][BOARD_SIZE], COLOR color) {
 				continue;
 			}
 		} else if (strcmp(command_type, "move") == 0) {
-			if (new_move != NULL) clear_old_moves(new_move);
+			if (new_move != NULL ) clear_old_moves(new_move);
 			new_move = malloc(sizeof(Move));
 			new_move->next = NULL;
 			new_move->piece.row = atoi(strtok(NULL, delimiter)) - 1;
@@ -341,7 +317,7 @@ void user_turn(char board[BOARD_SIZE][BOARD_SIZE], COLOR color) {
 				printf(ILLEGAL_MOVE);
 				continue;
 			}
-			exc_move(board, move2do, color);
+			exc_move(board, move2do);
 			Move* copied_move = copy_move(move2do);
 			copied_move->prev = curr_move;
 			curr_move = copied_move;
@@ -371,14 +347,14 @@ void gui_alert(int alert) {
 	if (alert != GAME_ON) {
 		COLOR alert_color = curr_player == WHITE ? BLACK : WHITE;
 		if (alert != CHECK_POS) game_on = 0;
-		alert_state(alert, alert_color); // this func alert special states in chess ui
+//		alert_state(alert, alert_color); // this func alert special states in chess ui
 	}
 }
 
 int main(int argc, char * argv[]) {
 	if (argc == 2) gui_mode = strcmp(argv[1], "gui") == 0 ? 1 : 0;
-	//todo change gui_mode to 1
-	gui_mode = 0;
+//todo change gui_mode to 1
+	gui_mode = 1;
 	char board[BOARD_SIZE][BOARD_SIZE];
 	int start = 0;
 //  next lines to check load_board and load_game
@@ -392,187 +368,189 @@ int main(int argc, char * argv[]) {
 		printf("Finished Start cmd in if gui_mode");
 		duplicate_board(gui_board, board);
 	} //setting gui
-	else { //setting console
-		init_board(board);
-		printf(ENTER_SETTINGS);
-		char *command = input_to_str(stdin);
-		while (strcmp(command, "quit") != 0) {
-			if (strcmp(command, "start") == 0) {
-				if (is_valid_board(board)) {
-					start = 1;
-					break;
-				} else printf(WROND_BOARD_INITIALIZATION);
-			} else
-				conosle_settings_mode(command, board);
-			free(command);
-			printf(ENTER_SETTINGS);
-			command = input_to_str(stdin);
-		}
-		free(command);
-	}
+	return 0;
+}
+//	else { //setting console
+//		init_board(board);
+//		printf(ENTER_SETTINGS);
+//		char *command = input_to_str(stdin);
+//		while (strcmp(command, "quit") != 0) {
+//			if (strcmp(command, "start") == 0) {
+//				if (is_valid_board(board)) {
+//					start = 1;
+//					break;
+//				} else printf(WROND_BOARD_INITIALIZATION);
+//			} else
+//				conosle_settings_mode(command, board);
+//			free(command);
+//			printf(ENTER_SETTINGS);
+//			command = input_to_str(stdin);
+//		}
+//		free(command);
+//	}
 
-	if (start) {
-		while (1) {
-			if (game_mode == PLAYER_VS_COMPUTER) {
-				int turn;
-				if (user_color == start_color) {
-					//user starts
-					curr_player = user_color;
-					turn = pre_turn_verify(board, curr_player);
-					if (gui_mode) { //gui_mode
-						gui_alert(turn);
-						Move * new_move = NULL;
-						Move * move2do = NULL;
-						while (move2do == NULL ) {
-							new_move = gui_game_mode(board);
-							if (new_move != NULL ) move2do = is_valid_move(moves_head, new_move);
-							if (!game_on || new_move == NULL ) break;
-						}
-						if (game_on && move2do != NULL )
-							exc_move(board, move2do, curr_player);
-						else if (game_on && move2do == NULL ) {
-							start = gui_setting_mode();
-							duplicate_board(gui_board, board);
-							continue;
-						} else
-							break;
-					} else { //console mode
-						console_alert(turn);
-						if (game_on)
-							user_turn(board, curr_player);
-						else
-							break;
-					}
-
-					curr_player = !user_color;
-					turn = pre_turn_verify(board, curr_player);
-					if (gui_mode) {
-						gui_alert(turn);
-						if (game_on)
-							computer_turn(board, curr_player);
-						else
-							break;
-					} else {
-						console_alert(turn);
-						if (game_on)
-							computer_turn(board, curr_player);
-						else
-							break;
-					}
-				}
-				//comp starts
-				else {
-					curr_player = !user_color;
-					turn = pre_turn_verify(board, curr_player);
-					if (gui_mode) {
-						gui_alert(turn);
-						if (game_on)
-							computer_turn(board, curr_player);
-						else
-							break;
-					} else {
-						console_alert(turn);
-						if (game_on)
-							computer_turn(board, curr_player);
-						else
-							break;
-					}
-
-					curr_player = user_color;
-					turn = pre_turn_verify(board, user_color);
-					if (gui_mode) {
-						gui_alert(turn);
-						Move * new_move = NULL;
-						Move * move2do = NULL;
-						while (move2do == NULL ) {
-							new_move = gui_game_mode(board);
-							if (new_move != NULL ) move2do = is_valid_move(moves_head, new_move);
-							if (!game_on || new_move == NULL ) break;
-						}
-						if (game_on && move2do != NULL )
-							exc_move(board, move2do, curr_player);
-						else if (game_on && move2do == NULL ) {
-							start = gui_setting_mode();
-							duplicate_board(gui_board, board);
-							continue;
-						} else
-							break;
-					} else {
-						console_alert(turn);
-						if (game_on)
-							user_turn(board, curr_player);
-						else
-							break;
-					}
-				}
-			}
-			// 2 players
-			if (game_mode == 2) {
-				int turn;
-				curr_player = start_color;
-				turn = pre_turn_verify(board, curr_player);
-				if (gui_mode) {
-					gui_alert(turn);
-					Move * new_move = NULL;
-					Move * move2do = NULL;
-					while (move2do == NULL ) {
-						new_move = gui_game_mode(board);
-						if (new_move != NULL ) move2do = is_valid_move(moves_head, new_move);
-						if (!game_on || new_move == NULL ) break;
-					}
-					if (game_on && move2do != NULL )
-						exc_move(board, move2do, curr_player);
-					else if (game_on && move2do == NULL ) {
-						start = gui_setting_mode();
-						duplicate_board(gui_board, board);
-						continue;
-					} else
-						break;
-				} else {
-					console_alert(turn);
-					if (game_on)
-						user_turn(board, curr_player);
-					else
-						break;
-				}
-
-				curr_player = !start_color;
-				turn = pre_turn_verify(board, curr_player);
-				if (gui_mode) {
-					gui_alert(turn);
-					Move * new_move = NULL;
-					Move * move2do = NULL;
-					while (move2do == NULL ) {
-						new_move = gui_game_mode(board);
-						if (new_move != NULL ) move2do = is_valid_move(moves_head, new_move);
-						if (!game_on || new_move == NULL ) break;
-					}
-					if (game_on && move2do != NULL )
-						exc_move(board, move2do, curr_player);
-					else if (game_on && move2do == NULL ) {
-						start = gui_setting_mode();
-						duplicate_board(gui_board, board);
-						continue;
-					} else
-						break;
-				} else {
-					console_alert(turn);
-					if (game_on)
-						user_turn(board, curr_player);
-					else
-						break;
-				}
-
-			}
-		}
-		//TODO verify the need for this last section
+//	if (start) {
+//		while (1) {
+//			if (game_mode == PLAYER_VS_COMPUTER) {
+//				int turn;
+//				if (user_color == start_color) {
+//					//user starts
+//					curr_player = user_color;
+//					turn = pre_turn_verify(board, curr_player);
+//					if (gui_mode) { //gui_mode
+//						gui_alert(turn);
+//						Move * new_move = NULL;
+//						Move * move2do = NULL;
+//						while (move2do == NULL ) {
+//							new_move = gui_game_mode(board);
+//							if (new_move != NULL ) move2do = is_valid_move(moves_head, new_move);
+//							if (!game_on || new_move == NULL ) break;
+//						}
+//						if (game_on && move2do != NULL )
+//							exc_move(board, move2do);
+//						else if (game_on && move2do == NULL ) {
+//							start = gui_setting_mode();
+//							duplicate_board(gui_board, board);
+//							continue;
+//						} else
+//							break;
+//					} else { //console mode
+//						console_alert(turn);
+//						if (game_on)
+//							user_turn(board, curr_player);
+//						else
+//							break;
+//					}
+//
+//					curr_player = !user_color;
+//					turn = pre_turn_verify(board, curr_player);
+//					if (gui_mode) {
+//						gui_alert(turn);
+//						if (game_on)
+//							computer_turn(board, curr_player);
+//						else
+//							break;
+//					} else {
+//						console_alert(turn);
+//						if (game_on)
+//							computer_turn(board, curr_player);
+//						else
+//							break;
+//					}
+//				}
+//				//comp starts
+//				else {
+//					curr_player = !user_color;
+//					turn = pre_turn_verify(board, curr_player);
+//					if (gui_mode) {
+//						gui_alert(turn);
+//						if (game_on)
+//							computer_turn(board, curr_player);
+//						else
+//							break;
+//					} else {
+//						console_alert(turn);
+//						if (game_on)
+//							computer_turn(board, curr_player);
+//						else
+//							break;
+//					}
+//
+//					curr_player = user_color;
+//					turn = pre_turn_verify(board, user_color);
+//					if (gui_mode) {
+//						gui_alert(turn);
+//						Move * new_move = NULL;
+//						Move * move2do = NULL;
+//						while (move2do == NULL ) {
+//							new_move = gui_game_mode(board);
+//							if (new_move != NULL ) move2do = is_valid_move(moves_head, new_move);
+//							if (!game_on || new_move == NULL ) break;
+//						}
+//						if (game_on && move2do != NULL )
+//							exc_move(board, move2do);
+//						else if (game_on && move2do == NULL ) {
+//							start = gui_setting_mode();
+//							duplicate_board(gui_board, board);
+//							continue;
+//						} else
+//							break;
+//					} else {
+//						console_alert(turn);
+//						if (game_on)
+//							user_turn(board, curr_player);
+//						else
+//							break;
+//					}
+//				}
+//			}
+//			// 2 players
+//			if (game_mode == 2) {
+//				int turn;
+//				curr_player = start_color;
+//				turn = pre_turn_verify(board, curr_player);
+//				if (gui_mode) {
+//					gui_alert(turn);
+//					Move * new_move = NULL;
+//					Move * move2do = NULL;
+//					while (move2do == NULL ) {
+//						new_move = gui_game_mode(board);
+//						if (new_move != NULL ) move2do = is_valid_move(moves_head, new_move);
+//						if (!game_on || new_move == NULL ) break;
+//					}
+//					if (game_on && move2do != NULL )
+//						exc_move(board, move2do);
+//					else if (game_on && move2do == NULL ) {
+//						start = gui_setting_mode();
+//						duplicate_board(gui_board, board);
+//						continue;
+//					} else
+//						break;
+//				} else {
+//					console_alert(turn);
+//					if (game_on)
+//						user_turn(board, curr_player);
+//					else
+//						break;
+//				}
+//
+//				curr_player = !start_color;
+//				turn = pre_turn_verify(board, curr_player);
+//				if (gui_mode) {
+//					gui_alert(turn);
+//					Move * new_move = NULL;
+//					Move * move2do = NULL;
+//					while (move2do == NULL ) {
+//						new_move = gui_game_mode(board);
+//						if (new_move != NULL ) move2do = is_valid_move(moves_head, new_move);
+//						if (!game_on || new_move == NULL ) break;
+//					}
+//					if (game_on && move2do != NULL )
+//						exc_move(board, move2do);
+//					else if (game_on && move2do == NULL ) {
+//						start = gui_setting_mode();
+//						duplicate_board(gui_board, board);
+//						continue;
+//					} else
+//						break;
+//				} else {
+//					console_alert(turn);
+//					if (game_on)
+//						user_turn(board, curr_player);
+//					else
+//						break;
+//				}
+//
+//			}
+//		}
+//	TODO verify the need for this last section
 //		if (!gui_mode) {
 //			char *command = input_to_str(stdin);
 //			free(command);
 //		}
-	}
-	printf(QUIT_MSG);
-	free(curr_move);
-	return 0;
-}
+//	}
+//	printf(QUIT_MSG);
+//	free(curr_move);
+//	return 0;
+//}
 

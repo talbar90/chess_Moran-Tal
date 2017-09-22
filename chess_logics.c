@@ -1,4 +1,7 @@
 #include "chess_logics.h"
+//TODO: delete print_moves
+//TODO: delete promote
+//TODO: delete piece counter, validate_board, get_type_by_piece
 
 // Globals
 Move* moves = NULL;
@@ -12,21 +15,18 @@ COLOR user_color = WHITE;
 COLOR start_color = WHITE;
 int minimax_depth = 2;
 GAME_MODE game_mode = PLAYER_VS_COMPUTER;
-int best_depth = 0;
 int board_count = 0;
 int gui_mode = 0;
 int game_on = 1;
-char black_promotables[4] = { BLACK_B, BLACK_N, BLACK_Q, BLACK_R };
-char white_promotables[4] = { WHITE_B, WHITE_N, WHITE_Q, WHITE_R };
 
-// Helper funcs
 int is_valid_pos(Pos pos) {
 	return (pos.col >= 0 && pos.col < BOARD_SIZE && pos.row >= 0 && pos.row < BOARD_SIZE);
 }
 
-int is_opposite(COLOR player, char piece) {
-	if (player == WHITE && (piece >= 'A' && piece <= 'Z')) return 1;
-	if (player == BLACK && (piece >= 'a' && piece <= 'z')) return 1;
+int is_players_piece(COLOR player, char piece) {
+	if (piece == '_') return 0;
+	if (piece >= 'A' && piece <= 'Z' && player == BLACK) return 1;
+	if (piece >= 'a' && piece <= 'z' && player == WHITE) return 1;
 	return 0;
 }
 
@@ -35,69 +35,6 @@ int get_opposite_color() {
 		return BLACK;
 	else
 		return WHITE;
-}
-
-char* get_piece_name_by_type(int type) {
-	switch (type) {
-	case 0:
-		return "king"; // may  cause some probs, was case 6
-	case 1:
-		return "queen";
-	case 2:
-		return "bishop";
-	case 3:
-		return "rook";
-	case 4:
-		return "knight";
-	case 5:
-		return "pawn";
-	}
-	return NULL ;
-}
-
-int get_type_by_name(char * piece) {
-	if (piece == NULL ) return 0;
-	if (strcmp(piece, "queen") == 0) return 1;
-	if (strcmp(piece, "bishop") == 0) return 2;
-	if (strcmp(piece, "rook") == 0) return 3;
-	if (strcmp(piece, "knight") == 0) return 4;
-	return 0;
-}
-
-char get_piece_by_name(char * name, COLOR color) {
-	char piece;
-	if (strcmp(name, "king") == 0) piece = 'k';
-	if (strcmp(name, "queen") == 0) piece = 'q';
-	if (strcmp(name, "rook") == 0) piece = 'r';
-	if (strcmp(name, "knight") == 0) piece = 'n';
-	if (strcmp(name, "bishop") == 0) piece = 'b';
-	if (strcmp(name, "pawn") == 0) piece = 'm';
-	if (color == BLACK) piece = toupper(piece);
-	return piece;
-}
-
-char get_piece_by_type(int type, COLOR player) {
-	switch (type) {
-	case 0: // may  cause some probs, was case 6
-		if (player == WHITE) return WHITE_K;
-		return BLACK_K;
-	case 1:
-		if (player == WHITE) return WHITE_Q;
-		return BLACK_Q;
-	case 2:
-		if (player == WHITE) return WHITE_B;
-		return BLACK_B;
-	case 3:
-		if (player == WHITE) return WHITE_R;
-		return BLACK_R;
-	case 4:
-		if (player == WHITE) return WHITE_N;
-		return BLACK_N;
-	case 5:
-		if (player == WHITE) return WHITE_P;
-		return BLACK_P;
-	}
-	return '\0';
 }
 
 int get_type_by_piece(char piece) {
@@ -124,7 +61,7 @@ int get_type_by_piece(char piece) {
 	return -1; // added to avoid compilation warning - not very safe, but we made sure we never get here.
 }
 
-char* get_piece_full_name_by_char(char piece){
+char* get_piece_full_name_by_char(char piece) {
 	switch (piece) {
 	case WHITE_K:
 	case BLACK_K:
@@ -149,7 +86,6 @@ char* get_piece_full_name_by_char(char piece){
 	return "none";
 }
 
-
 COLOR get_color_by_piece(char piece) {
 	if (piece == WHITE_K || piece == WHITE_Q || piece == WHITE_B || piece == WHITE_R || piece == WHITE_N || piece == WHITE_P)
 		return WHITE;
@@ -159,130 +95,155 @@ COLOR get_color_by_piece(char piece) {
 		return BLACK;
 }
 
-// Helper func - checks if a piece belongs to the player
 int is_valid_piece(char board[BOARD_SIZE][BOARD_SIZE], Move * move, COLOR color) {
 	if (is_valid_pos(move->piece) && board[move->piece.col][move->piece.row] != EMPTY)
-		return !is_opposite(color, board[move->piece.col][move->piece.row]);
+		return is_players_piece(color, board[move->piece.col][move->piece.row]);
 	return 0;
 }
 
-// Helper func - checks if a piece reached the end of the board according to its color
-int is_EOB(Pos piece, COLOR player) {
-	if (player == BLACK)
-		return piece.row == 0;
-	else
-		return piece.row == BOARD_SIZE - 1;
-}
-
-// Helper func
 void duplicate_board(char board1[BOARD_SIZE][BOARD_SIZE], char board2[BOARD_SIZE][BOARD_SIZE]) {
 	for (int i = 0; i < BOARD_SIZE; i++)
 		for (int j = 0; j < BOARD_SIZE; j++)
 			board2[i][j] = board1[i][j];
 }
 
-int is_pos_threatened(Pos pos, char board[BOARD_SIZE][BOARD_SIZE], COLOR player) {
-	Pos curr;
-	int blocked[4] = { 0 };
-	char* pieces;
-	char bpieces[6] = { BLACK_P, BLACK_B, BLACK_N, BLACK_R, BLACK_Q, BLACK_K };
-	char wpieces[6] = { WHITE_P, WHITE_B, WHITE_N, WHITE_R, WHITE_Q, WHITE_K };
-	pieces = (player == WHITE) ? bpieces : wpieces;
-
-	// check pawns
+int threat_by_pawn(Pos pos, char board[BOARD_SIZE][BOARD_SIZE], COLOR player) {
+	Pos pawn_threat;
 	int dir = player == WHITE ? 1 : -1;
-	curr.row = pos.row + dir;
-	curr.col = pos.col - 1;
-	if (is_valid_pos(curr)) {
-		if (board[curr.col][curr.row] == pieces[0]) return 1;
+	char oppenent_pawn = player == WHITE ? 'P' : 'p';
+	pawn_threat.row = pos.row + dir;
+	pawn_threat.col = pos.col - 1;
+	if (is_valid_pos(pos)) {
+		if (board[pawn_threat.col][pawn_threat.row] == oppenent_pawn) return 1;
 	}
-	curr.col = pos.col + 1;
-	if (is_valid_pos(curr)) {
-		if (board[curr.col][curr.row] == pieces[0]) return 1;
+	pawn_threat.col = pos.col + 1;
+	if (is_valid_pos(pos)) {
+		if (board[pawn_threat.col][pawn_threat.row] == oppenent_pawn) return 1;
 	}
-
-	// check bishops + queen
-	for (int i = 1; i < BOARD_SIZE; i++) {
-		curr.col = pos.col - i, curr.row = pos.row - i;
-		if (is_valid_pos(curr) && !blocked[0]) {
-			blocked[0] = (board[curr.col][curr.row] != EMPTY) ? 1 : 0;
-			if (board[curr.col][curr.row] == pieces[1] || board[curr.col][curr.row] == pieces[4]) return 1;
-		}
-		curr.col = pos.col + i;
-		if (is_valid_pos(curr) && !blocked[1]) {
-			blocked[1] = (board[curr.col][curr.row] != EMPTY) ? 1 : 0;
-			if (board[curr.col][curr.row] == pieces[1] || board[curr.col][curr.row] == pieces[4]) return 1;
-		}
-		curr.row = pos.row + i;
-		if (is_valid_pos(curr) && !blocked[2]) {
-			blocked[2] = (board[curr.col][curr.row] != EMPTY) ? 1 : 0;
-			if (board[curr.col][curr.row] == pieces[1] || board[curr.col][curr.row] == pieces[4]) return 1;
-		}
-		curr.col = pos.col - i;
-		if (is_valid_pos(curr) && !blocked[3]) {
-			blocked[3] = (board[curr.col][curr.row] != EMPTY) ? 1 : 0;
-			if (board[curr.col][curr.row] == pieces[1] || board[curr.col][curr.row] == pieces[4]) return 1;
-		}
-	}
-
-	// check knights
-	Pos dests[8] = { { pos.col - 2, pos.row - 1 }, { pos.col - 2, pos.row + 1 }, { pos.col + 2, pos.row - 1 }, { pos.col + 2, pos.row + 1 },
-			{ pos.col - 1, pos.row - 2 }, { pos.col + 1, pos.row - 2 }, { pos.col - 1, pos.row + 2 }, { pos.col + 1, pos.row + 2 } };
-	for (int i = 0; i < 8; i++) {
-		if (is_valid_pos(dests[i])) {
-			if (board[dests[i].col][dests[i].row] == pieces[2]) return 1;
-		}
-	}
-
-	// check rooks + queen
-	for (int j = 0; j < 4; j++)
-		blocked[j] = 0;
-	for (int i = 1; i < BOARD_SIZE; i++) {
-		curr.col = pos.col - i;
-		curr.row = pos.row;
-		if (is_valid_pos(curr) && !blocked[0]) {
-			blocked[0] = (board[curr.col][curr.row] != EMPTY) ? 1 : 0;
-			if (board[curr.col][curr.row] == pieces[3] || board[curr.col][curr.row] == pieces[4]) return 1;
-		}
-		curr.col = pos.col + i;
-		if (is_valid_pos(curr) && !blocked[1]) {
-			blocked[1] = (board[curr.col][curr.row] != EMPTY) ? 1 : 0;
-			if (board[curr.col][curr.row] == pieces[3] || board[curr.col][curr.row] == pieces[4]) return 1;
-		}
-		curr.col = pos.col, curr.row = pos.row - i;
-		if (is_valid_pos(curr) && !blocked[2]) {
-			blocked[2] = (board[curr.col][curr.row] != EMPTY) ? 1 : 0;
-			if (board[curr.col][curr.row] == pieces[3] || board[curr.col][curr.row] == pieces[4]) return 1;
-		}
-		curr.row = pos.row + i;
-		if (is_valid_pos(curr) && !blocked[3]) {
-			blocked[3] = (board[curr.col][curr.row] != EMPTY) ? 1 : 0;
-			if (board[curr.col][curr.row] == pieces[3] || board[curr.col][curr.row] == pieces[4]) return 1;
-		}
-	}
-
-	// check king
-	Pos kdests[8] = { { pos.col - 1, pos.row - 1 }, { pos.col - 1, pos.row }, { pos.col - 1, pos.row + 1 }, { pos.col + 1, pos.row - 1 }, {
-			pos.col + 1, pos.row }, { pos.col + 1, pos.row + 1 }, { pos.col, pos.row - 1 }, { pos.col, pos.row + 1 } };
-	for (int i = 0; i < 8; i++) {
-		if (is_valid_pos(kdests[i])) {
-			if (board[kdests[i].col][kdests[i].row] == pieces[5]) return 1;
-		}
-	}
-
-	// no threat
 	return 0;
 }
 
-//if the king in the color of the player is threatened
+int threat_by_bishop_like(Pos pos, char board[BOARD_SIZE][BOARD_SIZE], COLOR player) {
+	Pos diagonal_threat;
+	int open_diagonal_right_up = 1;
+	int open_diagonal_left_up = 1;
+	int open_diagonal_right_down = 1;
+	int open_diagonal_left_down = 1;
+	char oppenent_bishop = player == WHITE ? 'B' : 'b';
+	char oppenent_queen = player == WHITE ? 'Q' : 'q';
+
+	for (int i = 1; i < BOARD_SIZE; i++) {
+		diagonal_threat.col = pos.col + i;
+		diagonal_threat.row = pos.row - i;
+		if (is_valid_pos(diagonal_threat) && open_diagonal_right_down) {
+			open_diagonal_right_down = (board[diagonal_threat.col][diagonal_threat.row] != EMPTY) ? 1 : 0;
+			if (board[diagonal_threat.col][diagonal_threat.row] == oppenent_bishop
+					|| board[diagonal_threat.col][diagonal_threat.row] == oppenent_queen) return 1;
+		}
+		diagonal_threat.col = pos.col + i;
+		diagonal_threat.row = pos.row + i;
+		if (is_valid_pos(diagonal_threat) && open_diagonal_right_up) {
+			open_diagonal_right_up = (board[diagonal_threat.col][diagonal_threat.row] != EMPTY) ? 1 : 0;
+			if (board[diagonal_threat.col][diagonal_threat.row] == oppenent_bishop
+					|| board[diagonal_threat.col][diagonal_threat.row] == oppenent_queen) return 1;
+		}
+		diagonal_threat.col = pos.col - i, diagonal_threat.row = pos.row - i;
+		if (is_valid_pos(diagonal_threat) && open_diagonal_left_down) {
+			open_diagonal_left_down = (board[diagonal_threat.col][diagonal_threat.row] != EMPTY) ? 1 : 0;
+			if (board[diagonal_threat.col][diagonal_threat.row] == oppenent_bishop
+					|| board[diagonal_threat.col][diagonal_threat.row] == oppenent_queen) return 1;
+		}
+		diagonal_threat.col = pos.col - i;
+		diagonal_threat.row = pos.row + i;
+		if (is_valid_pos(diagonal_threat) && open_diagonal_left_up) {
+			open_diagonal_left_up = (board[diagonal_threat.col][diagonal_threat.row] != EMPTY) ? 1 : 0;
+			if (board[diagonal_threat.col][diagonal_threat.row] == oppenent_bishop
+					|| board[diagonal_threat.col][diagonal_threat.row] == oppenent_queen) return 1;
+		}
+	}
+	return 0;
+}
+int threat_by_knight(Pos pos, char board[BOARD_SIZE][BOARD_SIZE], COLOR player) {
+	char oppenent_knight = player == WHITE ? 'N' : 'n';
+	int steps[4] = { 1, 2, -1, -2 };
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			Pos threat_by_pos = { pos.col + steps[i], pos.row + steps[j] };
+			if (abs(i) != abs(j) && is_valid_pos(threat_by_pos)) {
+				if (board[threat_by_pos.col][threat_by_pos.row] == oppenent_knight) return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+int threat_by_root_like(Pos pos, char board[BOARD_SIZE][BOARD_SIZE], COLOR player) {
+	Pos root_like_threat;
+	int open_up = 1;
+	int open_down = 1;
+	int open_right = 1;
+	int open_left = 1;
+	char opponent_root = player == WHITE ? 'R' : 'r';
+	char opponent_queen = player == WHITE ? 'Q' : 'q';
+
+	for (int i = 1; i < BOARD_SIZE; i++) {
+		root_like_threat.col = pos.col - i;
+		root_like_threat.row = pos.row;
+		if (is_valid_pos(root_like_threat) && open_left) {
+			open_left = (board[root_like_threat.col][root_like_threat.row] != EMPTY) ? 1 : 0;
+			if (board[root_like_threat.col][root_like_threat.row] == opponent_root
+					|| board[root_like_threat.col][root_like_threat.row] == opponent_queen) return 1;
+		}
+		root_like_threat.col = pos.col + i;
+		root_like_threat.row = pos.row;
+		if (is_valid_pos(root_like_threat) && open_right) {
+			open_right = (board[root_like_threat.col][root_like_threat.row] != EMPTY) ? 1 : 0;
+			if (board[root_like_threat.col][root_like_threat.row] == opponent_root
+					|| board[root_like_threat.col][root_like_threat.row] == opponent_queen) return 1;
+		}
+		root_like_threat.col = pos.col;
+		root_like_threat.row = pos.row - i;
+		if (is_valid_pos(root_like_threat) && open_down) {
+			open_down = (board[root_like_threat.col][root_like_threat.row] != EMPTY) ? 1 : 0;
+			if (board[root_like_threat.col][root_like_threat.row] == opponent_root
+					|| board[root_like_threat.col][root_like_threat.row] == opponent_queen) return 1;
+		}
+		root_like_threat.col = pos.col;
+		root_like_threat.row = pos.row + i;
+		if (is_valid_pos(root_like_threat) && open_up) {
+			open_up = (board[root_like_threat.col][root_like_threat.row] != EMPTY) ? 1 : 0;
+			if (board[root_like_threat.col][root_like_threat.row] == opponent_root
+					|| board[root_like_threat.col][root_like_threat.row] == opponent_queen) return 1;
+		}
+	}
+	return 0;
+}
+
+int threat_by_king(Pos pos, char board[BOARD_SIZE][BOARD_SIZE], COLOR player) {
+	char oppenent_king = player == WHITE ? 'K' : 'k';
+	int steps[3] = { 1, 0, -1 };
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			if (i == 0 && j == 0) continue;
+			Pos threat_by_pos = { pos.col + steps[i], pos.row + steps[j] };
+			if (is_valid_pos(threat_by_pos)) {
+				if (board[threat_by_pos.col][threat_by_pos.row] == oppenent_king) return 1;
+			}
+		}
+	}
+	return 0;
+}
+//Checks is check situation by examining all the threats of the king
 int is_check(char board[BOARD_SIZE][BOARD_SIZE], COLOR player) {
-	char king = player == WHITE ? WHITE_K : BLACK_K;
+	char king = player == WHITE ? 'k' : 'K';
 	for (int i = 0; i < BOARD_SIZE; i++) {
 		for (int j = 0; j < BOARD_SIZE; j++) {
 			if (board[i][j] == king) {
-				Pos king_pos;
-				king_pos.col = i, king_pos.row = j;
-				return is_pos_threatened(king_pos, board, player);
+				Pos king;
+				king.col = i, king.row = j;
+				return (threat_by_pawn(king, board, player) || threat_by_bishop_like(king, board, player)
+						|| threat_by_root_like(king, board, player) || threat_by_knight(king, board, player)
+						|| threat_by_king(king, board, player));
 			}
 		}
 	}
@@ -312,8 +273,8 @@ int piece_counter(char board[BOARD_SIZE][BOARD_SIZE], int * whites, int * blacks
 	return bishop_fault;
 }
 
-// executes a specific move on the given board
-void exc_move(char board[BOARD_SIZE][BOARD_SIZE], Move * move, COLOR color) {
+//Moves piece to the required location
+void exc_move(char board[BOARD_SIZE][BOARD_SIZE], Move * move) {
 	board[move->dest.col][move->dest.row] = board[move->piece.col][move->piece.row];
 	board[move->piece.col][move->piece.row] = EMPTY;
 }
@@ -322,36 +283,20 @@ void undo_move(char board[BOARD_SIZE][BOARD_SIZE], COLOR color) {
 	Move* move_to_undo = curr_move;
 	board[move_to_undo->piece.col][move_to_undo->piece.row] = board[move_to_undo->dest.col][move_to_undo->dest.row];
 	board[move_to_undo->dest.col][move_to_undo->dest.row] = EMPTY;
-	printf(UNDO_MOVE, color == WHITE ? "white" : "black", move_to_undo->piece.row + 1, move_to_undo->piece.col + 'A', move_to_undo->dest.row + 1,
-			move_to_undo->dest.col + 'A');
+	printf(UNDO_MOVE, color == WHITE ? "white" : "black", move_to_undo->piece.row + 1, move_to_undo->piece.col + 'A',
+			move_to_undo->dest.row + 1, move_to_undo->dest.col + 'A');
 	curr_move = curr_move->prev;
 	free(move_to_undo);
 	print_board(board);
 }
-void clear_illegal_moves(char board[BOARD_SIZE][BOARD_SIZE], COLOR player) {
-	Move *prev_move = moves_head, *curr_move = moves_head;
-	char tmp_board[BOARD_SIZE][BOARD_SIZE];
-	while (curr_move != NULL ) {
-		duplicate_board(board, tmp_board);
-		exc_move(tmp_board, curr_move, player);
-		if (is_check(tmp_board, player) != 0) {
-			if (curr_move == moves_head) {
-				moves_head = curr_move->next;
-				free(curr_move);
-				curr_move = moves_head, prev_move = moves_head;
-			} else {
-				prev_move->next = curr_move->next;
-				free(curr_move);
-				curr_move = prev_move->next;
-			}
-		} else {
-			prev_move = curr_move;
-			curr_move = curr_move->next;
-		}
-	}
+
+int is_check_move(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, Move * move) {
+	//TODO: verify tmp_board
+	duplicate_board(board, tmp_board);
+	exc_move(tmp_board, move);
+	return is_check(tmp_board, player);
 }
 
-// frees moves linked list
 void clear_old_moves(Move* head) {
 	if (head != NULL ) {
 		clear_old_moves(head->next);
@@ -369,8 +314,7 @@ Move* copy_move(Move* move_to_copy) {
 	return copied_move;
 }
 
-// adds a move to the list
-void add_move(Pos piece, Pos dest, char promote) {
+void add_move(Pos piece, Pos dest) {
 	if (moves == NULL ) {
 		moves = malloc(sizeof(Move));
 		moves_head = moves;
@@ -378,179 +322,214 @@ void add_move(Pos piece, Pos dest, char promote) {
 		moves->next = malloc(sizeof(Move));
 		moves = moves->next;
 	}
-
 	moves->piece.col = piece.col;
 	moves->piece.row = piece.row;
 	moves->dest.col = dest.col;
 	moves->dest.row = dest.row;
-
-	moves->promote = promote;
 	moves->next = NULL;
 }
 
-int is_valid_dest(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, Pos dest) {
-	if (board[dest.col][dest.row] == EMPTY) return 1;
-	if (is_opposite(player, board[dest.col][dest.row])) return 2;
-	return 0;
+void add_legal_move(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, Pos curr_pos, Pos dest_pos) {
+	Move * move = malloc(sizeof(Move));
+	move->piece = curr_pos;
+	move->dest = dest_pos;
+	if ((board[dest_pos.col][dest_pos.row] == '_' || !is_players_piece(player, board[dest_pos.col][dest_pos.row]))
+			&& !is_check_move(board, player, move)) add_move(curr_pos, dest_pos);
+	free(move);
 }
 
-void get_rook_moves(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, Pos piece) {
-	Pos curr;
-	curr.row = piece.row;
-	curr.col = piece.col + 1;
-	while (is_valid_pos(curr)) {
-		if (is_valid_dest(board, player, curr) == 1 || is_valid_dest(board, player, curr) == 2) add_move(piece, curr, 0);
-		if (is_valid_dest(board, player, curr) == 0 || is_valid_dest(board, player, curr) == 2) break;
-		curr.col++;
-	}
-	curr.col = piece.col - 1;
-	while (is_valid_pos(curr)) {
-		if (is_valid_dest(board, player, curr) == 1 || is_valid_dest(board, player, curr) == 2) add_move(piece, curr, 0);
-		if (is_valid_dest(board, player, curr) == 0 || is_valid_dest(board, player, curr) == 2) break;
-		curr.col--;
-	}
-	curr.col = piece.col;
-	curr.row = piece.row + 1;
-	while (is_valid_pos(curr)) {
-		if (is_valid_dest(board, player, curr) == 1 || is_valid_dest(board, player, curr) == 2) add_move(piece, curr, 0);
-		if (is_valid_dest(board, player, curr) == 0 || is_valid_dest(board, player, curr) == 2) break;
-		curr.row++;
-	}
-	curr.row = piece.row - 1;
-	while (is_valid_pos(curr)) {
-		if (is_valid_dest(board, player, curr) == 1 || is_valid_dest(board, player, curr) == 2) add_move(piece, curr, 0);
-		if (is_valid_dest(board, player, curr) == 0 || is_valid_dest(board, player, curr) == 2) break;
-		curr.row--;
-	}
-}
-
-void get_bishop_moves(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, Pos piece) {
-	Pos curr;
-	curr.col = piece.col + 1;
-	curr.row = piece.row + 1;
-	while (is_valid_pos(curr)) {
-		if (is_valid_dest(board, player, curr) == 1 || is_valid_dest(board, player, curr) == 2) add_move(piece, curr, 0);
-		if (is_valid_dest(board, player, curr) == 0 || is_valid_dest(board, player, curr) == 2) break;
-		curr.col++, curr.row++;
-	}
-	curr.col = piece.col - 1;
-	curr.row = piece.row - 1;
-	while (is_valid_pos(curr)) {
-		if (is_valid_dest(board, player, curr) == 1 || is_valid_dest(board, player, curr) == 2) add_move(piece, curr, 0);
-		if (is_valid_dest(board, player, curr) == 0 || is_valid_dest(board, player, curr) == 2) break;
-		curr.col--, curr.row--;
-	}
-	curr.col = piece.col - 1;
-	curr.row = piece.row + 1;
-	while (is_valid_pos(curr)) {
-		if (is_valid_dest(board, player, curr) == 1 || is_valid_dest(board, player, curr) == 2) add_move(piece, curr, 0);
-		if (is_valid_dest(board, player, curr) == 0 || is_valid_dest(board, player, curr) == 2) break;
-		curr.col--, curr.row++;
-	}
-	curr.col = piece.col + 1;
-	curr.row = piece.row - 1;
-	while (is_valid_pos(curr)) {
-		if (is_valid_dest(board, player, curr) == 1 || is_valid_dest(board, player, curr) == 2) add_move(piece, curr, 0);
-		if (is_valid_dest(board, player, curr) == 0 || is_valid_dest(board, player, curr) == 2) break;
-		curr.col++, curr.row--;
-	}
-}
-
-void get_pawn_moves(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, Pos piece) {
-	int direction = board[piece.col][piece.row] == BLACK_P ? -1 : 1;
-	int pawn_row = board[piece.col][piece.row] == BLACK_P ? 6 : 1;
-
-	Pos dest;
-	dest.col = piece.col;
-	dest.row = piece.row + direction;
-
-	if (is_valid_pos(dest)) {
-		if (board[dest.col][dest.row] == EMPTY) {
-			add_move(piece, dest, 0);
-//			if (is_EOB(dest, player)) for (int i = 1; i < 5; i++) add_move(piece, dest, get_piece_by_type(i, player));
-		}
-	}
-
-	if (piece.row == pawn_row) {
-		dest.row = piece.row + (2 * direction);
-		if (is_valid_pos(dest)) {
-//			if (board[dest.col][dest.row] == EMPTY && board[piece.col][piece.row + direction] == EMPTY) add_move(piece, dest, 0);
-		}
-	}
-	dest.col = piece.col + 1;
-	dest.row = piece.row + direction;
-	if (is_valid_pos(dest)) {
-		if (is_opposite(player, board[dest.col][dest.row])) {
-			add_move(piece, dest, 0);
-//			if (is_EOB(dest, player)) for (int i = 1; i < 5; i++) add_move(piece, dest, get_piece_by_type(i, player));
-		}
-	}
-	dest.col = piece.col - 1;
-	if (is_valid_pos(dest)) {
-		if (is_opposite(player, board[dest.col][dest.row])) {
-			add_move(piece, dest, 0);
-//			if (is_EOB(dest, player)) for (int i = 1; i < 5; i++) add_move(piece, dest, get_piece_by_type(i, player));
+//tmp_dests = (Pos[8] ) { { piece.col - 1, piece.row - 1 }, { piece.col - 1, piece.row }, { piece.col - 1, piece.row + 1 }, {
+//						piece.col + 1, piece.row - 1 }, { piece.col + 1, piece.row }, { piece.col + 1, piece.row + 1 }, { piece.col,
+//						piece.row - 1 }, { piece.col, piece.row + 1 } };
+//
+void get_king_moves(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, Pos curr_pos) {
+	int steps[3] = { 1, 0, -1 };
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			if (i == 0 && j == 0) continue;
+			Pos dest_pos = { curr_pos.col + steps[i], curr_pos.row + steps[j] };
+			add_legal_move(board, player, curr_pos, dest_pos);
 		}
 	}
 }
 
-void get_moves_by_piece(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, Pos piece) {
-	Pos* tmp_dests;
-	switch (board[piece.col][piece.row]) {
-	case WHITE_B:
-	case BLACK_B:
-		get_bishop_moves(board, player, piece);
-		return;
-	case WHITE_R:
-	case BLACK_R:
-		get_rook_moves(board, player, piece);
-		return;
-	case WHITE_Q:
-	case BLACK_Q:
-		get_bishop_moves(board, player, piece);
-		get_rook_moves(board, player, piece);
-		return;
-	case BLACK_P:
-	case WHITE_P:
-		get_pawn_moves(board, player, piece);
-		return;
-	case WHITE_K:
-	case BLACK_K:
-		tmp_dests = (Pos[8] ) { { piece.col - 1, piece.row - 1 }, { piece.col - 1, piece.row }, { piece.col - 1, piece.row + 1 }, {
-						piece.col + 1, piece.row - 1 }, { piece.col + 1, piece.row }, { piece.col + 1, piece.row + 1 }, { piece.col,
-						piece.row - 1 }, { piece.col, piece.row + 1 } };
-		break;
-	case WHITE_N:
-	case BLACK_N:
-		tmp_dests = (Pos[8] ) { { piece.col - 2, piece.row - 1 }, { piece.col - 2, piece.row + 1 }, { piece.col + 2, piece.row - 1 }, {
-						piece.col + 2, piece.row + 1 }, { piece.col - 1, piece.row - 2 }, { piece.col + 1, piece.row - 2 }, { piece.col - 1,
-						piece.row + 2 }, { piece.col + 1, piece.row + 2 } };
-		break;
-	default:
-		return;
-	}
-	for (int i = 0; i < 8; i++) {
-		if (is_valid_pos(tmp_dests[i])) {
-			if (board[tmp_dests[i].col][tmp_dests[i].row] == EMPTY || is_opposite(player, board[tmp_dests[i].col][tmp_dests[i].row])) {
-				add_move(piece, tmp_dests[i], 0);
+void get_queen_moves(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, Pos piece) {
+	get_bishop_moves(board, player, piece);
+	get_rook_moves(board, player, piece);
+}
+
+//tmp_dests = (Pos[8] ) { { piece.col - 2, piece.row - 1 }, { piece.col - 2, piece.row + 1 }, { piece.col + 2, piece.row - 1 }, {
+//				piece.col + 2, piece.row + 1 }, { piece.col - 1, piece.row - 2 }, { piece.col + 1, piece.row - 2 }, { piece.col - 1,
+//				piece.row + 2 }, { piece.col + 1, piece.row + 2 } };
+void get_knight_moves(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, Pos curr_pos) {
+	int steps[4] = { 1, 2, -1, -2 };
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			Pos dest_pos = { curr_pos.col + steps[i], curr_pos.row + steps[j] };
+			if (abs(i) != abs(j) && is_valid_pos(dest_pos)) {
+				add_legal_move(board, player, curr_pos, dest_pos);
 			}
 		}
 	}
-	return;
 }
+
+void get_rook_moves(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, Pos curr_pos) {
+	Pos dest_pos;
+	int open_up = 1;
+	int open_down = 1;
+	int open_right = 1;
+	int open_left = 1;
+
+	for (int i = 1; i < BOARD_SIZE; i++) {
+		dest_pos.col = curr_pos.col - i;
+		dest_pos.row = curr_pos.row;
+		if (is_valid_pos(dest_pos) && open_left) {
+			open_left = (board[dest_pos.col][dest_pos.row] != EMPTY) ? 1 : 0;
+			add_legal_move(board, player, curr_pos, dest_pos);
+		}
+		dest_pos.col = curr_pos.col + i;
+		dest_pos.row = curr_pos.row;
+		if (is_valid_pos(dest_pos) && open_right) {
+			open_right = (board[dest_pos.col][dest_pos.row] != EMPTY) ? 1 : 0;
+			add_legal_move(board, player, curr_pos, dest_pos);
+		}
+		dest_pos.col = curr_pos.col;
+		dest_pos.row = curr_pos.row - i;
+		if (is_valid_pos(dest_pos) && open_down) {
+			open_down = (board[dest_pos.col][dest_pos.row] != EMPTY) ? 1 : 0;
+			add_legal_move(board, player, curr_pos, dest_pos);
+		}
+		dest_pos.col = curr_pos.col;
+		dest_pos.row = curr_pos.row + i;
+		if (is_valid_pos(dest_pos) && open_up) {
+			open_up = (board[dest_pos.col][dest_pos.row] != EMPTY) ? 1 : 0;
+			add_legal_move(board, player, curr_pos, dest_pos);
+		}
+	}
+}
+
+void get_bishop_moves(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, Pos curr_pos) {
+
+	Pos dest_pos;
+	int open_diagonal_right_up = 1;
+	int open_diagonal_left_up = 1;
+	int open_diagonal_right_down = 1;
+	int open_diagonal_left_down = 1;
+
+	for (int i = 1; i < BOARD_SIZE; i++) {
+		dest_pos.col = curr_pos.col + i;
+		dest_pos.row = curr_pos.row - i;
+		if (is_valid_pos(dest_pos) && open_diagonal_right_down) {
+			open_diagonal_right_down = (board[dest_pos.col][dest_pos.row] != EMPTY) ? 1 : 0;
+			add_legal_move(board, player, curr_pos, dest_pos);
+		}
+		dest_pos.col = curr_pos.col + i;
+		dest_pos.row = curr_pos.row + i;
+		if (is_valid_pos(dest_pos) && open_diagonal_right_up) {
+			open_diagonal_right_up = (board[dest_pos.col][dest_pos.row] != EMPTY) ? 1 : 0;
+			add_legal_move(board, player, curr_pos, dest_pos);
+		}
+		dest_pos.col = curr_pos.col - i, dest_pos.row = curr_pos.row - i;
+		if (is_valid_pos(dest_pos) && open_diagonal_left_down) {
+			open_diagonal_left_down = (board[dest_pos.col][dest_pos.row] != EMPTY) ? 1 : 0;
+			add_legal_move(board, player, curr_pos, dest_pos);
+		}
+		dest_pos.col = curr_pos.col - i;
+		dest_pos.row = curr_pos.row + i;
+		if (is_valid_pos(dest_pos) && open_diagonal_left_up) {
+			open_diagonal_left_up = (board[dest_pos.col][dest_pos.row] != EMPTY) ? 1 : 0;
+			add_legal_move(board, player, curr_pos, dest_pos);
+		}
+	}
+}
+void get_pawn_moves(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, Pos curr_pos) {
+	Pos dest_pos;
+	dest_pos.col = curr_pos.col;
+	dest_pos.row = player == WHITE ? curr_pos.row + 1 : curr_pos.row - 1;
+	if (is_valid_pos(dest_pos)) {
+		if (board[dest_pos.col][dest_pos.row] == '_') add_legal_move(board, player, curr_pos, dest_pos);
+	}
+	if (curr_pos.row == 1 && player == WHITE) {
+		dest_pos.row = curr_pos.row + 2;
+		if (is_valid_pos(dest_pos)) add_legal_move(board, player, curr_pos, dest_pos);
+	}
+	if (curr_pos.row == 6 && player == BLACK) {
+		dest_pos.row = curr_pos.row - 2;
+		if (is_valid_pos(dest_pos)) add_legal_move(board, player, curr_pos, dest_pos);
+	}
+	dest_pos.col = curr_pos.col + 1;
+	if (is_valid_pos(dest_pos)) {
+		if (!is_players_piece(player, board[dest_pos.col][dest_pos.row])) add_legal_move(board, player, curr_pos, dest_pos);
+	}
+	dest_pos.col = curr_pos.col - 1;
+	if (is_valid_pos(dest_pos)) {
+		if (!is_players_piece(player, board[dest_pos.col][dest_pos.row])) add_legal_move(board, player, curr_pos, dest_pos);
+	}
+}
+
+//
+//void get_moves_by_piece(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, Pos piece) {
+//	Pos* tmp_dests;
+//	switch (board[piece.col][piece.row]) {
+//	case WHITE_B:
+//	case BLACK_B:
+//		get_bishop_moves(board, player, piece);
+//		return;
+//	case WHITE_R:
+//	case BLACK_R:
+//		get_rook_moves(board, player, piece);
+//		return;
+//	case WHITE_Q:
+//	case BLACK_Q:
+//		get_bishop_moves(board, player, piece);
+//		get_rook_moves(board, player, piece);
+//		return;
+//	case BLACK_P:
+//	case WHITE_P:
+//		get_pawn_moves(board, player, piece);
+//		return;
+//	case WHITE_K:
+//	case BLACK_K:
+//		tmp_dests = (Pos[8] ) { { piece.col - 1, piece.row - 1 }, { piece.col - 1, piece.row }, { piece.col - 1, piece.row + 1 }, {
+//						piece.col + 1, piece.row - 1 }, { piece.col + 1, piece.row }, { piece.col + 1, piece.row + 1 }, { piece.col,
+//						piece.row - 1 }, { piece.col, piece.row + 1 } };
+//		break;
+//	case WHITE_N:
+//	case BLACK_N:
+//		tmp_dests = (Pos[8] ) { { piece.col - 2, piece.row - 1 }, { piece.col - 2, piece.row + 1 }, { piece.col + 2, piece.row - 1 }, {
+//						piece.col + 2, piece.row + 1 }, { piece.col - 1, piece.row - 2 }, { piece.col + 1, piece.row - 2 }, { piece.col - 1,
+//						piece.row + 2 }, { piece.col + 1, piece.row + 2 } };
+//		break;
+//	default:
+//		return;
+//	}
+//	for (int i = 0; i < 8; i++) {
+//		if (is_valid_pos(tmp_dests[i])) {
+//			if (board[tmp_dests[i].col][tmp_dests[i].row] == EMPTY
+//					|| !is_players_piece(player, board[tmp_dests[i].col][tmp_dests[i].row])) {
+//				add_move(piece, tmp_dests[i], 0);
+//			}
+//		}
+//	}
+//	return;
+//}
 
 Move * get_all_moves(char board[BOARD_SIZE][BOARD_SIZE], COLOR player) {
 	moves_head = NULL;
 	moves = NULL;
-	Pos p;
+	Pos piece;
 	for (int i = 0; i < BOARD_SIZE; i++)
 		for (int j = 0; j < BOARD_SIZE; j++)
-			if (!is_opposite(player, board[i][j]) && board[i][j] != EMPTY) {
-				p.row = j;
-				p.col = i;
-				get_moves_by_piece(board, player, p);
+			if (is_players_piece(player, board[i][j]) && board[i][j] != EMPTY) {
+				piece.row = j;
+				piece.col = i;
+				if (board[i][j] == 'p' || board[i][j] == 'P') get_pawn_moves(board, player, piece);
+				if (board[i][j] == 'b' || board[i][j] == 'B') get_bishop_moves(board, player, piece);
+				if (board[i][j] == 'r' || board[i][j] == 'R') get_rook_moves(board, player, piece);
+				if (board[i][j] == 'k' || board[i][j] == 'K') get_king_moves(board, player, piece);
+				if (board[i][j] == 'n' || board[i][j] == 'N') get_knight_moves(board, player, piece);
+				if (board[i][j] == 'q' || board[i][j] == 'Q') get_queen_moves(board, player, piece);
 			}
-	clear_illegal_moves(board, player);
 	return moves_head;
 }
 
@@ -559,7 +538,7 @@ void print_move(Move* move) {
 	if (move == NULL )
 		printf("NO CURR MOVE");
 	else {
-		printf("<%d,%c> to <%d,%c>",  move->piece.row + 1, move->piece.col + 'A', move->dest.row + 1, move->dest.col + 'A');
+		printf("<%d,%c> to <%d,%c>", move->piece.row + 1, move->piece.col + 'A', move->dest.row + 1, move->dest.col + 'A');
 	}
 	printf("\n");
 }
@@ -580,17 +559,6 @@ void print_piece_moves(Move* head, Pos pos) {
 	}
 }
 
-
-
-//	void print_best_moves(Move* head, int score) {
-//		while (head != NULL ) {
-//			if (head->score == score) {
-//				print_move(head);
-//			}
-//			h head = head->next;
-//		}
-//	}
-
 int count_moves_num(Move* head) {
 	int cnt = 0;
 	while (head != NULL ) {
@@ -601,47 +569,47 @@ int count_moves_num(Move* head) {
 	return cnt;
 }
 
-int estimate_best_depth(char board[BOARD_SIZE][BOARD_SIZE], COLOR player) {
-	int p_moves, op_moves, p_exp, op_exp, sum;
-	int ret_depth = 0;
-	clear_old_moves(moves_head);
-	get_all_moves(board, !player);
-	op_moves = count_moves_num(moves_head);
-	clear_old_moves(moves_head);
-	get_all_moves(board, player);
-	p_moves = count_moves_num(moves_head);
-	sum = op_moves + p_moves;
-	p_exp = p_moves;
-	op_exp = op_moves;
-	while (sum < BOARD_LIMIT) {
-		ret_depth++;
-		op_exp *= op_moves;
-		p_exp *= p_moves;
-		sum = op_exp + p_exp;
-	}
-	return ret_depth;
-}
-
-// calculates the score of the board from a player's prospective
 int calc_score(char board[BOARD_SIZE][BOARD_SIZE], COLOR player) {
-	int * whites = malloc(sizeof(int) * 6);
-	int * blacks = malloc(sizeof(int) * 6);
-	for (int i = 0; i < 6; i++) {
-		whites[i] = 0;
-		blacks[i] = 0;
+	int score_w = 0;
+	int score_b = 0;
+	for (int i = 0; i < BOARD_SIZE; i++) {
+		for (int j = 0; j < BOARD_SIZE; j++) {
+			if (board[i][j] == 'p') {
+				score_w++;
+			}
+			if (board[i][j] == 'P') {
+				score_b++;
+			}
+			if (board[i][j] == 'b' || board[i][j] == 'n') {
+				score_w += 3;
+			}
+			if (board[i][j] == 'B' || board[i][j] == 'b') {
+				score_b += 3;
+			}
+			if (board[i][j] == 'q') {
+				score_w += 9;
+			}
+			if (board[i][j] == 'Q') {
+				score_b += 9;
+			}
+			if (board[i][j] == 'r') {
+				score_w += 5;
+			}
+			if (board[i][j] == 'R') {
+				score_b += 5;
+			}
+			if (board[i][j] == 'k') {
+				score_w += 100;
+			}
+			if (board[i][j] == 'K') {
+				score_b += 100;
+			}
+		}
 	}
-	piece_counter(board, whites, blacks);
-
-	int white_score = whites[get_type_by_piece(WHITE_P)] + 3 * whites[get_type_by_piece(WHITE_B)] + 3 * whites[get_type_by_piece(WHITE_N)]
-			+ 5 * whites[get_type_by_piece(WHITE_R)] + 9 * whites[get_type_by_piece(WHITE_Q)] + 100 * whites[get_type_by_piece(WHITE_K)];
-	int black_score = blacks[get_type_by_piece(BLACK_P)] + 3 * blacks[get_type_by_piece(BLACK_B)] + 3 * blacks[get_type_by_piece(BLACK_N)]
-			+ 5 * blacks[get_type_by_piece(BLACK_R)] + 9 * blacks[get_type_by_piece(BLACK_Q)] + 100 * blacks[get_type_by_piece(BLACK_K)];
-	free(whites);
-	free(blacks);
 	if (player == WHITE)
-		return white_score - black_score;
+		return score_w - score_b;
 	else
-		return black_score - white_score;
+		return score_b - score_w;
 }
 
 // minimax recursive func, using alpha-beta pruning
@@ -679,10 +647,10 @@ int alpha_beta_minimax(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, int dep
 
 	char init_board[BOARD_SIZE][BOARD_SIZE];
 	duplicate_board(board, init_board);
-	// MAX
+// MAX
 	if (depth % 2 == 0) {
 		while (curr_move != NULL ) {
-			exc_move(board, curr_move, player);
+			exc_move(board, curr_move);
 			curr_move->score = alpha_beta_minimax(board, (player == 0), depth + 1, alpha, beta);
 			if (curr_move->score > alpha) {
 				alpha = curr_move->score;
@@ -705,10 +673,10 @@ int alpha_beta_minimax(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, int dep
 			moves_head = move_list;
 		return alpha;
 	}
-	// MIN
+// MIN
 	else {
 		while (curr_move != NULL ) {
-			exc_move(board, curr_move, player);
+			exc_move(board, curr_move);
 			curr_move->score = alpha_beta_minimax(board, (player == 0), depth + 1, alpha, beta);
 			if (curr_move->score < beta) {
 				beta = curr_move->score;
@@ -779,3 +747,4 @@ Move * is_valid_move(Move * moves, Move * new_move) {
 	}
 	return NULL ;
 }
+

@@ -1,5 +1,7 @@
 #ifndef CHESS_
 #define CHESS_
+//TODO verify illegal command syntax
+//TODO remove prinf
 
 #define _CRT_SECURE_NO_WARNINGS
 
@@ -51,7 +53,6 @@
 #define SETTING_TWO_PLAYERS "SETTINGS:\nGAME_MODE: %d\n"
 #define EXPERT_LEVEL_NOT_SUPPORTS "Expert level not supported"
 
-//TODO verify illegal command syntax
 #define ILLEGAL_COMMAND "Illegal command, please try again\n"
 #define ILLEGAL_MOVE "Illegal move\n"
 
