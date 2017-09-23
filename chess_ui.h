@@ -14,13 +14,12 @@
 #endif
 
 
-#define BOARD_SIZE 8
-// Game Globals
-extern char gui_board[BOARD_SIZE][BOARD_SIZE];
-extern char tmp_board[BOARD_SIZE][BOARD_SIZE];
-
 typedef enum {
-	SP_MAIN_LOAD, SP_MAIN_START, SP_MAIN_INVALID_ARGUMENT, SP_MAIN_NONE, SP_MAIN_QUIT
+	SP_MAIN_LOAD,
+	SP_MAIN_START,
+	SP_MAIN_INVALID_ARGUMENT,
+	SP_MAIN_NONE,
+	SP_MAIN_QUIT
 } SP_MAIN_EVENT;
 
 typedef struct {
@@ -33,39 +32,6 @@ typedef struct {
 } SPMainWin;
 
 typedef struct {
-	//SDL_Window* window;
-	SDL_Window* mainWindow;
-	SDL_Renderer* mainRenderer;
-	SDL_Texture* one_player;
-	SDL_Texture* two_players;
-	SDL_Texture* start;
-	SDL_Texture* back;
-} SPChooseMode;
-
-typedef struct {
-	//SDL_Window* window;
-	SDL_Window* diffWindow;
-	SDL_Renderer* mainRenderer;
-	SDL_Texture* level1;
-	SDL_Texture* level2;
-	SDL_Texture* level3;
-	SDL_Texture* level4;
-	SDL_Texture* next;
-	SDL_Texture* back;
-} SPChooseDiff;
-
-typedef struct {
-	//SDL_Window* window;
-	SDL_Window* colorWindow;
-	SDL_Renderer* mainRenderer;
-	SDL_Texture* black_color;
-	SDL_Texture* while_color;
-	SDL_Texture* start;
-	SDL_Texture* back;
-} SPChooseColor;
-
-typedef struct {
-	//SDL_Window* window;
 	SDL_Window* mainWindow;
 	SDL_Renderer* mainRenderer;
 	SDL_Texture* load1;
@@ -75,67 +41,16 @@ typedef struct {
 	SDL_Texture* load5;
 } SPloadWin;
 
-
-typedef struct{
-	char board[8][8];
-	char currentPlayer;
-} SPChess;
-
-typedef struct{
-	SDL_Window* window;
-	SDL_Renderer* renderer;
-	SDL_Texture* bgTexture;
-	SDL_Texture* xTexture;
-	SDL_Texture* oTexture;
-	SPChess* game;
-}SPGameWin;
-
-typedef enum{
-	SP_MANAGER_QUTT,
-	SP_MANAGER_NONE,
-}SP_MANAGER_EVENET;
-
-typedef enum{
-	SP_MAIN_WINDOW_ACTIVE,
-	SP_GAME_WINDOW_ACTIVE,
-	SP_MODE_ACTIVE,
-	SP_DIFF_ACTIVE,
-	SP_COLOR_ACTIVE,
-	SP_LOAD_ACTIVE
-}ACTIVE_WINDOW;
-
-
-typedef struct {
-	SPGameWin* gameWin;
-	SPMainWin* mainWin;
-	SPChooseMode* chooseModeWin;
-	SPChooseDiff* chooseDiffWin;
-	SPChooseColor* chooseColorWin;
-	SPloadWin* loadWin;
-	ACTIVE_WINDOW activeWin;
-} SPGuiManager;
-
-
-typedef enum {
-	SP_GAME_EVENT_X_WON,
-	SP_GAME_EVENT_O_WON,
-	SP_GAME_EVENT_TIE,
-	SP_GAME_EVENT_QUIT,
-	SP_GAME_EVENT_INVALID_ARGUMENT,
-	SP_GAME_EVENT_NONE
-} SP_GAME_EVENT;
-
-
-
-
-
 SPMainWin* spMainWindowCreate();
 void spMainWindowDraw(SPMainWin* src);
 void spMainWindowDestroy(SPMainWin* src);
 void spMainWindowHide(SPMainWin* src);
 void spMainWindowShow(SPMainWin* src);
 SP_MAIN_EVENT spMainWindowHandleEvent(SPMainWin* src, SDL_Event* event);
-
+int gui_setting_mode();
+int isClickOnNewGame(int x, int y);
+int isClickOnLoadGame(int x, int y);
+int isClickOnLoadQuit(int x, int y);
 #endif
 //
 //#define WIN_W 800

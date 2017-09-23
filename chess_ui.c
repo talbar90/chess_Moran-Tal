@@ -1,11 +1,7 @@
 #include "chess_ui.h"
 
-// Game Globals
-char gui_board[BOARD_SIZE][BOARD_SIZE];
-char tmp_board[BOARD_SIZE][BOARD_SIZE];
-char piece_picked = '\0';
-Pos *src_pos = NULL;
-Move *move_to_do = NULL;
+//Pos *src_pos = NULL;
+//Move *move_to_do = NULL;
 
 //main window
 
@@ -23,7 +19,7 @@ SPMainWin* spMainWindowCreate() {
 			SDL_WINDOWPOS_CENTERED,           // initial x position
 			SDL_WINDOWPOS_CENTERED,           // initial y position
 			800,                               // width, in pixels
-			800,                               // height, in pixels
+			600,                               // height, in pixels
 			SDL_WINDOW_OPENGL                  // flags - see below
 			);
 
@@ -40,7 +36,7 @@ SPMainWin* spMainWindowCreate() {
 		printf("Could not create window: %s\n", SDL_GetError());
 		return NULL ;
 	}
-	loadingSurface = SDL_LoadBMP("./debug/pics/load_game.bmp");
+	loadingSurface = SDL_LoadBMP("./pics/load_game.bmp");
 	if (loadingSurface == NULL ) {
 		spMainWindowDestroy(res);
 		printf("couldn't create start.bmp surface\n");
@@ -55,7 +51,7 @@ SPMainWin* spMainWindowCreate() {
 	}
 	SDL_FreeSurface(loadingSurface);
 
-	loadingSurface = SDL_LoadBMP("./debug/pics/new_game.bmp");
+	loadingSurface = SDL_LoadBMP("./pics/new_game.bmp");
 	if (loadingSurface == NULL ) {
 		spMainWindowDestroy(res);
 		printf("couldn't create exit.bmp surface\n");
@@ -70,7 +66,7 @@ SPMainWin* spMainWindowCreate() {
 	}
 	SDL_FreeSurface(loadingSurface);
 
-	loadingSurface = SDL_LoadBMP("./debug/pics/quit.bmp");
+	loadingSurface = SDL_LoadBMP("./pics/quit.bmp");
 	if (loadingSurface == NULL ) {
 		spMainWindowDestroy(res);
 		printf("couldn't create start.bmp surface\n");
@@ -179,30 +175,6 @@ void spMainWindowShow(SPMainWin* src) {
 	SDL_ShowWindow(src->mainWindow);
 }
 
-int gui_setting_mode() {
-
-	if (SDL_Init(SDL_INIT_VIDEO) < 0) { //SDL2 INIT
-		printf("ERROR: unable to init SDL: %s\n", SDL_GetError());
-		return 1;
-	}
-
-	SPGuiManager* manager = spManagerCreate();
-	if (manager == NULL ) {
-		SDL_Quit();
-		return 0;
-	}
-	SDL_Event event;
-	while (1) {
-		SDL_WaitEvent(&event);
-		if (spManagerHandleEvent(manager, &event) == SP_MANAGER_QUTT) {
-			break;
-		}
-		spManagerDraw(manager);
-	}
-	spManagerDestroy(manager);
-	SDL_Quit();
-	return 0;
-
 //	if (currScreen == NULL) currScreen = mainMenu;
 //	else draw_tree(currScreen);
 //	printf("drawtree");
@@ -215,7 +187,7 @@ int gui_setting_mode() {
 //	}
 
 //	return 0;
-}
+//
 //
 //// Screens Globals
 //TreeNode *mainMenu = NULL;

@@ -8,6 +8,7 @@
 
 #define perror_message(func_name) (fprintf(stderr, "Error: standard function %s has failed\n", func_name))
 
+//TODO: remove BAD
 typedef enum { BLACK = 0, WHITE = 1, BAD = -100} COLOR;
 
 typedef enum { PLAYER_VS_COMPUTER = 1, TWO_PLAYERS = 2} GAME_MODE;

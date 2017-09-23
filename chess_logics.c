@@ -1,7 +1,8 @@
 #include "chess_logics.h"
-//TODO: delete print_moves
+//TODO: delete print_moves, print_moves, print_piece_moves
 //TODO: delete promote
 //TODO: delete piece counter, validate_board, get_type_by_piece
+//TODO: remove get_moves_by_piece
 
 // Globals
 Move* moves = NULL;
@@ -14,11 +15,15 @@ Move* best_move;
 COLOR user_color = WHITE;
 COLOR start_color = WHITE;
 int minimax_depth = 2;
-GAME_MODE game_mode = PLAYER_VS_COMPUTER;
+//TODO: change back to one player
+GAME_MODE game_mode = TWO_PLAYERS;
 int board_count = 0;
 int gui_mode = 0;
 int game_on = 1;
+char gui_board[BOARD_SIZE][BOARD_SIZE];
+char tmp_board[BOARD_SIZE][BOARD_SIZE];
 
+// Checks if position is in bounds of the board
 int is_valid_pos(Pos pos) {
 	return (pos.col >= 0 && pos.col < BOARD_SIZE && pos.row >= 0 && pos.row < BOARD_SIZE);
 }
@@ -37,29 +42,6 @@ int get_opposite_color() {
 		return WHITE;
 }
 
-int get_type_by_piece(char piece) {
-	switch (piece) {
-	case WHITE_K:
-	case BLACK_K:
-		return 0;
-	case WHITE_Q:
-	case BLACK_Q:
-		return 1;
-	case WHITE_B:
-	case BLACK_B:
-		return 2;
-	case WHITE_R:
-	case BLACK_R:
-		return 3;
-	case WHITE_N:
-	case BLACK_N:
-		return 4;
-	case WHITE_P:
-	case BLACK_P:
-		return 5;
-	}
-	return -1; // added to avoid compilation warning - not very safe, but we made sure we never get here.
-}
 
 char* get_piece_full_name_by_char(char piece) {
 	switch (piece) {
@@ -101,12 +83,14 @@ int is_valid_piece(char board[BOARD_SIZE][BOARD_SIZE], Move * move, COLOR color)
 	return 0;
 }
 
+// Created a copy of board1 in board2
 void duplicate_board(char board1[BOARD_SIZE][BOARD_SIZE], char board2[BOARD_SIZE][BOARD_SIZE]) {
 	for (int i = 0; i < BOARD_SIZE; i++)
 		for (int j = 0; j < BOARD_SIZE; j++)
 			board2[i][j] = board1[i][j];
 }
 
+// Checks if the king is threatened by a pawn
 int threat_by_pawn(Pos pos, char board[BOARD_SIZE][BOARD_SIZE], COLOR player) {
 	Pos pawn_threat;
 	int dir = player == WHITE ? 1 : -1;
@@ -123,6 +107,7 @@ int threat_by_pawn(Pos pos, char board[BOARD_SIZE][BOARD_SIZE], COLOR player) {
 	return 0;
 }
 
+// Checks if the king is threatened by a diagonal move: bishop or queen
 int threat_by_bishop_like(Pos pos, char board[BOARD_SIZE][BOARD_SIZE], COLOR player) {
 	Pos diagonal_threat;
 	int open_diagonal_right_up = 1;
@@ -163,6 +148,8 @@ int threat_by_bishop_like(Pos pos, char board[BOARD_SIZE][BOARD_SIZE], COLOR pla
 	}
 	return 0;
 }
+
+// Checks if the king is threatened by a knight
 int threat_by_knight(Pos pos, char board[BOARD_SIZE][BOARD_SIZE], COLOR player) {
 	char oppenent_knight = player == WHITE ? 'N' : 'n';
 	int steps[4] = { 1, 2, -1, -2 };
@@ -177,6 +164,7 @@ int threat_by_knight(Pos pos, char board[BOARD_SIZE][BOARD_SIZE], COLOR player) 
 	return 0;
 }
 
+// Checks if the king is threatened by horizontal or vertical move: root or queen
 int threat_by_root_like(Pos pos, char board[BOARD_SIZE][BOARD_SIZE], COLOR player) {
 	Pos root_like_threat;
 	int open_up = 1;
@@ -219,6 +207,7 @@ int threat_by_root_like(Pos pos, char board[BOARD_SIZE][BOARD_SIZE], COLOR playe
 	return 0;
 }
 
+// Checks if the king is threatened by another king
 int threat_by_king(Pos pos, char board[BOARD_SIZE][BOARD_SIZE], COLOR player) {
 	char oppenent_king = player == WHITE ? 'K' : 'k';
 	int steps[3] = { 1, 0, -1 };
@@ -250,35 +239,13 @@ int is_check(char board[BOARD_SIZE][BOARD_SIZE], COLOR player) {
 	return 0;
 }
 
-int piece_counter(char board[BOARD_SIZE][BOARD_SIZE], int * whites, int * blacks) {
-	int white_b = -1, black_b = -1, bishop_fault = 0;
-
-	for (int i = 0; i < BOARD_SIZE; i++) {
-		for (int j = 0; j < BOARD_SIZE; j++) {
-			if (get_color_by_piece(board[i][j]) == WHITE) {
-				whites[get_type_by_piece(board[i][j])]++;
-				if (get_type_by_piece(board[i][j]) == 2) {
-					if (black_b != -1 && (i + j) % 2 == black_b) bishop_fault = 1;
-					black_b = (i + j) % 2;
-				}
-			} else if (get_color_by_piece(board[i][j]) == BLACK) {
-				blacks[get_type_by_piece(board[i][j])]++;
-				if (get_type_by_piece(board[i][j]) == 2) {
-					if (white_b != -1 && (i + j) % 2 == white_b) bishop_fault = 1;
-					white_b = (i + j) % 2;
-				}
-			}
-		}
-	}
-	return bishop_fault;
-}
-
 //Moves piece to the required location
 void exc_move(char board[BOARD_SIZE][BOARD_SIZE], Move * move) {
 	board[move->dest.col][move->dest.row] = board[move->piece.col][move->piece.row];
 	board[move->piece.col][move->piece.row] = EMPTY;
 }
 
+//Undo the last move
 void undo_move(char board[BOARD_SIZE][BOARD_SIZE], COLOR color) {
 	Move* move_to_undo = curr_move;
 	board[move_to_undo->piece.col][move_to_undo->piece.row] = board[move_to_undo->dest.col][move_to_undo->dest.row];
@@ -291,7 +258,6 @@ void undo_move(char board[BOARD_SIZE][BOARD_SIZE], COLOR color) {
 }
 
 int is_check_move(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, Move * move) {
-	//TODO: verify tmp_board
 	duplicate_board(board, tmp_board);
 	exc_move(tmp_board, move);
 	return is_check(tmp_board, player);
@@ -314,6 +280,7 @@ Move* copy_move(Move* move_to_copy) {
 	return copied_move;
 }
 
+//Adds move to moves linked list
 void add_move(Pos piece, Pos dest) {
 	if (moves == NULL ) {
 		moves = malloc(sizeof(Move));
@@ -329,6 +296,7 @@ void add_move(Pos piece, Pos dest) {
 	moves->next = NULL;
 }
 
+//Adds only legal moves: moves which are in the bounds of the board and do not put the king in check position
 void add_legal_move(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, Pos curr_pos, Pos dest_pos) {
 	Move * move = malloc(sizeof(Move));
 	move->piece = curr_pos;
@@ -338,10 +306,7 @@ void add_legal_move(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, Pos curr_p
 	free(move);
 }
 
-//tmp_dests = (Pos[8] ) { { piece.col - 1, piece.row - 1 }, { piece.col - 1, piece.row }, { piece.col - 1, piece.row + 1 }, {
-//						piece.col + 1, piece.row - 1 }, { piece.col + 1, piece.row }, { piece.col + 1, piece.row + 1 }, { piece.col,
-//						piece.row - 1 }, { piece.col, piece.row + 1 } };
-//
+//Get all possible legal king moves
 void get_king_moves(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, Pos curr_pos) {
 	int steps[3] = { 1, 0, -1 };
 	for (int i = 0; i < 3; i++) {
@@ -353,14 +318,14 @@ void get_king_moves(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, Pos curr_p
 	}
 }
 
+//Get all possible legal queen moves
 void get_queen_moves(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, Pos piece) {
 	get_bishop_moves(board, player, piece);
 	get_rook_moves(board, player, piece);
 }
 
-//tmp_dests = (Pos[8] ) { { piece.col - 2, piece.row - 1 }, { piece.col - 2, piece.row + 1 }, { piece.col + 2, piece.row - 1 }, {
-//				piece.col + 2, piece.row + 1 }, { piece.col - 1, piece.row - 2 }, { piece.col + 1, piece.row - 2 }, { piece.col - 1,
-//				piece.row + 2 }, { piece.col + 1, piece.row + 2 } };
+
+//Get all possible legal knight moves
 void get_knight_moves(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, Pos curr_pos) {
 	int steps[4] = { 1, 2, -1, -2 };
 	for (int i = 0; i < 4; i++) {
@@ -373,6 +338,7 @@ void get_knight_moves(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, Pos curr
 	}
 }
 
+//Get all possible legal root moves
 void get_rook_moves(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, Pos curr_pos) {
 	Pos dest_pos;
 	int open_up = 1;
@@ -408,6 +374,7 @@ void get_rook_moves(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, Pos curr_p
 	}
 }
 
+//Get all possible legal bishop moves
 void get_bishop_moves(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, Pos curr_pos) {
 
 	Pos dest_pos;
@@ -442,6 +409,8 @@ void get_bishop_moves(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, Pos curr
 		}
 	}
 }
+
+//Get all possible legal pawn moves
 void get_pawn_moves(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, Pos curr_pos) {
 	Pos dest_pos;
 	dest_pos.col = curr_pos.col;
@@ -514,6 +483,7 @@ void get_pawn_moves(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, Pos curr_p
 //	return;
 //}
 
+//Get all legal moves by piece
 Move * get_all_moves(char board[BOARD_SIZE][BOARD_SIZE], COLOR player) {
 	moves_head = NULL;
 	moves = NULL;
@@ -533,16 +503,17 @@ Move * get_all_moves(char board[BOARD_SIZE][BOARD_SIZE], COLOR player) {
 	return moves_head;
 }
 
-// prints a single move in a specific format
+// Move formatter according to the structure: <row_num,col_letter> to <row_num,col_letter>
 void print_move(Move* move) {
 	if (move == NULL )
-		printf("NO CURR MOVE");
+		printf("MOVE IS NULL");
 	else {
 		printf("<%d,%c> to <%d,%c>", move->piece.row + 1, move->piece.col + 'A', move->dest.row + 1, move->dest.col + 'A');
 	}
 	printf("\n");
 }
 
+// To delete
 void print_moves(Move* head) {
 	while (head != NULL ) {
 		print_move(head);
@@ -550,6 +521,7 @@ void print_moves(Move* head) {
 	}
 }
 
+// To delete
 void print_piece_moves(Move* head, Pos pos) {
 	while (head != NULL ) {
 		if (head->piece.col == pos.col && head->piece.row == pos.row) {
@@ -559,16 +531,7 @@ void print_piece_moves(Move* head, Pos pos) {
 	}
 }
 
-int count_moves_num(Move* head) {
-	int cnt = 0;
-	while (head != NULL ) {
-		cnt++;
-		head = head->next;
-	}
-	if (cnt == 0) cnt++;
-	return cnt;
-}
-
+// Calculate the score according to the following scoring system: pawn: 1, bishop and knight = 3, root = 5, queen = 9, king = 100
 int calc_score(char board[BOARD_SIZE][BOARD_SIZE], COLOR player) {
 	int score_w = 0;
 	int score_b = 0;
@@ -612,7 +575,7 @@ int calc_score(char board[BOARD_SIZE][BOARD_SIZE], COLOR player) {
 		return score_b - score_w;
 }
 
-// minimax recursive func, using alpha-beta pruning
+
 int alpha_beta_minimax(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, int depth, int alpha, int beta) {
 	Move* move_list = get_all_moves(board, player);
 	Move* curr_move = move_list;
@@ -647,7 +610,7 @@ int alpha_beta_minimax(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, int dep
 
 	char init_board[BOARD_SIZE][BOARD_SIZE];
 	duplicate_board(board, init_board);
-// MAX
+
 	if (depth % 2 == 0) {
 		while (curr_move != NULL ) {
 			exc_move(board, curr_move);
@@ -673,7 +636,7 @@ int alpha_beta_minimax(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, int dep
 			moves_head = move_list;
 		return alpha;
 	}
-// MIN
+
 	else {
 		while (curr_move != NULL ) {
 			exc_move(board, curr_move);
@@ -701,43 +664,7 @@ int alpha_beta_minimax(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, int dep
 	}
 }
 
-// safety check before starting the game
-int is_valid_board(char board[BOARD_SIZE][BOARD_SIZE]) {
-	int bishop_fault = 0;
-	int * whites = malloc(sizeof(int) * 6);
-	int * blacks = malloc(sizeof(int) * 6);
-	for (int i = 0; i < 6; i++) {
-		whites[i] = 0;
-		blacks[i] = 0;
-	}
-
-	bishop_fault = piece_counter(board, whites, blacks);
-
-	if (whites[get_type_by_piece(WHITE_P)] > 8 || whites[get_type_by_piece(WHITE_K)] != 1 || whites[get_type_by_piece(WHITE_Q)] > 1
-			|| blacks[get_type_by_piece(BLACK_P)] > 8 || blacks[get_type_by_piece(BLACK_K)] != 1 || blacks[get_type_by_piece(BLACK_Q)] > 1
-			|| bishop_fault) {
-		free(whites);
-		free(blacks);
-		return 0;
-	}
-	for (int i = 2; i < 5; i++) {
-		if (whites[i] > 2 || blacks[i] > 2) {
-			free(whites);
-			free(blacks);
-			return 0;
-		}
-	}
-	free(whites);
-	free(blacks);
-	for (int j = 0; j < BOARD_SIZE - 1; j++) {
-		if (get_type_by_piece(board[j][0]) == 5 || get_type_by_piece(board[j][BOARD_SIZE - 1]) == 5) {
-			return 0;
-		}
-	}
-	return 1;
-}
-
-// checks if a move is in the valid moves list
+// Checks whether the move is in the legal moves list
 Move * is_valid_move(Move * moves, Move * new_move) {
 	Move * current_move = moves;
 	while (current_move != NULL ) {

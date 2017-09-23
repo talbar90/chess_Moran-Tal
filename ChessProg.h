@@ -17,14 +17,14 @@
 #include "chess_ui.h"
 #endif
 
-#define WHITE_P 'p'
+#define WHITE_P 'm'
 #define WHITE_B 'b'
 #define WHITE_N 'n'
 #define WHITE_R 'r'
 #define WHITE_Q 'q'
 #define WHITE_K 'k'
 
-#define BLACK_P 'P'
+#define BLACK_P 'M'
 #define BLACK_B 'B'
 #define BLACK_N 'N'
 #define BLACK_R 'R'
@@ -80,18 +80,10 @@
 #define fgetc(x) safe_fgetc(x)
 #define free(x) safe_free(x)
 
-//#define printf(...) \
-//	if (printf(__VA_ARGS__) < 0){ \
-//		perror_message("printf"); \
-//		if (fail_safe) for (int i = 0; i < mem_count; i++) free(mem_list[i]); \
-//		abort();} \
-//				else (void)0
-
 void print_board(char board[BOARD_SIZE][BOARD_SIZE]);
 void clear_board(char board[BOARD_SIZE][BOARD_SIZE]);
 void init_board(char board[BOARD_SIZE][BOARD_SIZE]);
 int load_game(char * path, char board[BOARD_SIZE][BOARD_SIZE]);
-//TODO changed from save_game(char board[BOARD_SIZE][BOARD_SIZE], COLOR color, char * file_name)
 int save_game(char * file_name,char board[BOARD_SIZE][BOARD_SIZE] );
 char* input_to_str(FILE* pFile);
 void conosle_settings_mode(char* str, char board[BOARD_SIZE][BOARD_SIZE]);

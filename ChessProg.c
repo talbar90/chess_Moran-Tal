@@ -34,6 +34,7 @@ void print_board(char board[BOARD_SIZE][BOARD_SIZE]) {
 }
 
 void init_board(char board[BOARD_SIZE][BOARD_SIZE]) {
+	printf("initboard");
 	//initializes empty rows
 	for (int i = 0; i < 8; i++) {
 		for (int j = 2; j < 6; j++) {
@@ -364,9 +365,13 @@ int main(int argc, char * argv[]) {
 //	save_game("check_xml_save_game", board);
 //setting state
 	if (gui_mode) {
+		//TODO: change back order
+		init_board(board);
+		print_board(board);
+		duplicate_board(board,gui_board);
+		print_board(gui_board);
 		start = gui_setting_mode();
 		printf("Finished Start cmd in if gui_mode");
-		duplicate_board(gui_board, board);
 	} //setting gui
 	return 0;
 }

@@ -10,6 +10,8 @@
 #endif
 
 #define BOARD_SIZE 8
+extern char gui_board[BOARD_SIZE][BOARD_SIZE];
+extern char tmp_board[BOARD_SIZE][BOARD_SIZE];
 
 #define malloc(x) safe_malloc(x)
 #define realloc(x, y) safe_realloc((x), (y))
@@ -47,13 +49,11 @@ extern char white_promotables[4];
 
 // funcs
 int is_valid_pos(Pos pos);
-int get_type_by_piece(char piece);
 COLOR get_color_by_piece(char piece);
 int is_valid_piece(char board[BOARD_SIZE][BOARD_SIZE], Move * move, COLOR color);
 void duplicate_board(char board1[BOARD_SIZE][BOARD_SIZE], char board2[BOARD_SIZE][BOARD_SIZE]);
 int is_pos_threatened(Pos pos, char board[BOARD_SIZE][BOARD_SIZE], COLOR player);
 int is_check(char board[BOARD_SIZE][BOARD_SIZE], COLOR player);
-int piece_counter(char board[BOARD_SIZE][BOARD_SIZE], int * whites, int * blacks);
 void exc_move(char board[BOARD_SIZE][BOARD_SIZE], Move * move);
 void clear_illegal_moves(char board[BOARD_SIZE][BOARD_SIZE], COLOR player);
 void clear_old_moves(Move* head);
@@ -68,12 +68,10 @@ void print_move(Move* move);
 void print_moves(Move* head);
 void print_piece_moves(Move* head, Pos pos);
 void print_best_moves(Move* head, int score);
-int count_moves_num(Move* head);
 //int estimate_best_depth(char board[BOARD_SIZE][BOARD_SIZE], COLOR player);
 int calc_score(char board[BOARD_SIZE][BOARD_SIZE], COLOR player);
 //int improved_calc_score(char board[BOARD_SIZE][BOARD_SIZE], COLOR player);
 int alpha_beta_minimax(char board[BOARD_SIZE][BOARD_SIZE], COLOR player, int depth, int alpha, int beta);
-int is_valid_board(char board[BOARD_SIZE][BOARD_SIZE]);
 Move * is_valid_move(Move * moves, Move * new_move);
 int get_opposite_color();
 void undo_move(char board[BOARD_SIZE][BOARD_SIZE], COLOR color);
